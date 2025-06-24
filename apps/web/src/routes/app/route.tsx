@@ -26,6 +26,7 @@ function RouteComponent() {
         label: loaderData?.crumb,
       }
     })
+
   return (
     <SidebarProvider>
       <AppSidebar variant="floating" />

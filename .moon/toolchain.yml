@@ -1,0 +1,19 @@
+$schema: "https://moonrepo.dev/schemas/toolchain.json"
+
+default: "bun"
+
+node:
+  packageManager: "bun"
+
+bun:
+  installArgs: ["--frozen-lockfile"]
+  dependencyVersionFormat: "workspace"
+  inferTasksFromScripts: true
+  rootPackageOnly: true
+  syncProjectWorkspaceDependencies: true
+
+typescript:
+  projectConfigFileName: "tsconfig.json"
+  rootConfigFileName: "tsconfig.json"
+  routeOutDirToCache: true
+  syncProjectReferences: true

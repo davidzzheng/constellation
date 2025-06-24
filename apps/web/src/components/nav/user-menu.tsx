@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery } from "convex/react"
-import { BadgeCheck, Bell, ChevronsUpDown, CreditCard, LogOut, Sparkles } from "lucide-react"
+import { BadgeCheck, Bell, CreditCard, Ellipsis, LogOut, Sparkles } from "lucide-react"
 import { api } from "~/api"
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
 import {
@@ -42,7 +42,8 @@ export function NavUser() {
                 <span className="truncate font-medium">{user.name}</span>
                 <span className="truncate text-xs">{user.email}</span>
               </div>
-              <ChevronsUpDown className="ml-auto size-4" />
+
+              <Ellipsis className="ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
