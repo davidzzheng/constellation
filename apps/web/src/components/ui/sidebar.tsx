@@ -1,7 +1,7 @@
 "use client"
 
 import { cva, type VariantProps } from "cva"
-import { PanelLeftIcon } from "lucide-react"
+import { ChevronLeft, PanelLeftIcon } from "lucide-react"
 import type { Transition } from "motion/react"
 import { Slot } from "radix-ui"
 import * as React from "react"
@@ -187,7 +187,7 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+          className="w-(--sidebar-width) list-none bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
@@ -274,24 +274,30 @@ function Sidebar({
 
 type SidebarTriggerProps = React.ComponentProps<typeof Button>
 
-function SidebarTrigger({ className, onClick, ...props }: SidebarTriggerProps) {
+function SidebarTrigger({ className, children, onClick, ...props }: SidebarTriggerProps) {
   const { toggleSidebar } = useSidebar()
 
   return (
     <Button
       data-sidebar="trigger"
       data-slot="sidebar-trigger"
-      variant="ghost"
-      size="icon"
-      className={cn("size-7", className)}
+      variant="secondary"
+      className={cn(
+        "size-7 rounded-full transition-transform duration-300 group-data-[state=collapsed]:rotate-180",
+        className,
+      )}
       onClick={(event) => {
         onClick?.(event)
         toggleSidebar()
       }}
       {...props}
     >
-      <PanelLeftIcon />
-      <span className="sr-only">Toggle Sidebar</span>
+      {children ?? (
+        <>
+          <ChevronLeft />
+          <span className="sr-only">Toggle Sidebar</span>
+        </>
+      )}
     </Button>
   )
 }

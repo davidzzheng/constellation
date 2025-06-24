@@ -1,0 +1,7 @@
+$schema: "./cache/schemas/tasks.json"
+
+tasks:
+  format:
+    command: "biome format --write ."
+  lint:
+    command: "biome lint ."

@@ -14,20 +14,8 @@ import type * as React from "react"
 import { Toaster } from "sonner"
 import { DefaultCatchBoundary } from "~/components/default-catch-boundary"
 import { NotFound } from "~/components/NotFound"
-import { AppSidebar } from "~/components/nav"
-import { ThemeProvider, useTheme } from "~/components/theme-provider"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "~/components/ui/breadcrumb"
-import { Separator } from "~/components/ui/separator"
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "~/components/ui/sidebar"
+import { ThemeProvider, useTheme } from "~/components/providers/theme"
 import { authClient } from "~/lib/auth-client"
-import { getThemeServerFn } from "~/lib/theme"
 import appCss from "~/styles/app.css?url"
 import { seo } from "~/utils/seo"
 import { createAuth } from "../../convex/auth"
@@ -95,7 +83,6 @@ export const Route = createRootRouteWithContext<{
 
     return { userId, token }
   },
-  loader: async () => ({ theme: await getThemeServerFn() }),
   errorComponent: (props) => {
     return (
       <RootDocument>
@@ -109,11 +96,10 @@ export const Route = createRootRouteWithContext<{
 
 function RootComponent() {
   const context = useRouteContext({ from: Route.id })
-  const { theme } = Route.useLoaderData()
 
   return (
     <ConvexBetterAuthProvider client={context.convexClient} authClient={authClient}>
-      <ThemeProvider theme={theme}>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <RootDocument>
           <Outlet />
         </RootDocument>

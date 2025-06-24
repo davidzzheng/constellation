@@ -1,5 +1,4 @@
-$schema: "https://moonrepo.dev/schemas/toolchain.json"
-
+$schema: "./cache/schemas/toolchain.json"
 default: "bun"
 
 node:

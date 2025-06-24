@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery } from "convex/react"
-import { BadgeCheck, Bell, CreditCard, Ellipsis, LogOut, Sparkles } from "lucide-react"
+import { BadgeCheck, Bell, CreditCard, Eclipse, LogOut, Moon, Palette, Sparkles, Sun } from "lucide-react"
 import { api } from "~/api"
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
 import {
@@ -10,16 +10,26 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuPortal,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu"
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "~/components/ui/sidebar"
 import { authClient } from "~/lib/auth-client"
+import { useTheme } from "../providers/theme"
+import { Skeleton } from "../ui/skeleton"
 
 export function NavUser() {
   const user = useQuery(api.auth.getCurrentUser, {})
+  const { theme, setTheme } = useTheme()
   const { isMobile } = useSidebar()
-  if (!user) return <div>Loading...</div>
+
+  if (!user) return <Skeleton className="h-12 w-full" />
 
   const handleSignOut = async () => {
     await authClient.signOut()
@@ -42,8 +52,6 @@ export function NavUser() {
                 <span className="truncate font-medium">{user.name}</span>
                 <span className="truncate text-xs">{user.email}</span>
               </div>
-
-              <Ellipsis className="ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -65,6 +73,29 @@ export function NavUser() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger className="flex items-center gap-x-2">
+                <Palette /> Theme
+              </DropdownMenuSubTrigger>
+              <DropdownMenuPortal>
+                <DropdownMenuSubContent>
+                  <DropdownMenuRadioGroup value={theme} onValueChange={(val) => setTheme(val)}>
+                    <DropdownMenuRadioItem value="light">
+                      <Sun />
+                      Light
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="dark">
+                      <Moon />
+                      Dark
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="system">
+                      <Eclipse />
+                      System
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuSubContent>
+              </DropdownMenuPortal>
+            </DropdownMenuSub>
             <DropdownMenuGroup>
               <DropdownMenuItem>
                 <Sparkles />
