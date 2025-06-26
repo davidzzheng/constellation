@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet, useMatches } from "@tanstack/react-router"
+import { createFileRoute, isMatch, Link, Outlet, redirect, useMatches } from "@tanstack/react-router"
 import { Home } from "lucide-react"
 import { AppSidebar } from "~/components/nav"
 import {
@@ -10,16 +10,25 @@ import {
   BreadcrumbSeparator,
 } from "~/components/ui/breadcrumb"
 import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar"
+import { cn } from "~/lib/utils"
 
 export const Route = createFileRoute("/app")({
   component: RouteComponent,
+  // beforeLoad: async ({ context }) => {
+  //   const REDIRECT_URL = "/"
+  //   if (!context.userId) {
+  //     throw redirect({
+  //       to: REDIRECT_URL,
+  //     })
+  //   }
+  // },
 })
 
 function RouteComponent() {
   const matches = useMatches()
 
   const breadcrumbItems = matches
-    .filter((match) => match.loaderData?.crumb)
+    .filter((match) => isMatch(match, "loaderData.crumb"))
     .map(({ pathname, loaderData }) => {
       return {
         href: pathname,
@@ -43,9 +52,9 @@ function RouteComponent() {
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 {breadcrumbItems.map(({ href, label }, index, arr) => (
-                  <>
+                  <span key={href} className="flex items-center gap-x-2">
                     {index < arr.length && <BreadcrumbSeparator className="hidden md:block" />}
-                    <BreadcrumbItem key={href} className="slide-in-from-left-25 fade-in animate-in duration-250">
+                    <BreadcrumbItem key={href} className={cn("slide-in-from-left-25 fade-in animate-in duration-250")}>
                       {index === arr.length - 1 ? (
                         <BreadcrumbPage>{label}</BreadcrumbPage>
                       ) : (
@@ -54,7 +63,7 @@ function RouteComponent() {
                         </BreadcrumbLink>
                       )}
                     </BreadcrumbItem>
-                  </>
+                  </span>
                 ))}
               </BreadcrumbList>
             </Breadcrumb>

@@ -17,17 +17,17 @@ export const Route = createFileRoute("/")({
 function LandingPage() {
   const { data: session } = authClient.useSession()
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center px-4">
+    <div className="dark relative flex min-h-screen flex-col items-center justify-center bg-black px-4">
       <StarsBackground className="absolute inset-0 flex items-center justify-center rounded-xl opacity-60" />
 
       <div className="absolute top-0 right-0 z-10 m-6 flex gap-2">
         {session ? (
-          <Button asChild variant="outline">
+          <Button asChild variant="secondary">
             <Link to="/app">Dashboard</Link>
           </Button>
         ) : (
           <>
-            <Button asChild variant="outline">
+            <Button asChild variant="secondary">
               <Link to="/sign-in">Sign In</Link>
             </Button>
             <Button asChild>

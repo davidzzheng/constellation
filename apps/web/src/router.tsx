@@ -22,11 +22,12 @@ export function createRouter() {
   })
   const convexQueryClient = new ConvexQueryClient(convexClient)
 
-  const queryClient: QueryClient = new QueryClient({
+  const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
         queryKeyHashFn: convexQueryClient.hashFn(),
         queryFn: convexQueryClient.queryFn(),
+        experimental_prefetchInRender: true,
       },
     },
     mutationCache: new MutationCache({

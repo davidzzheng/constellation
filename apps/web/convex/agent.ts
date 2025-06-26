@@ -1,17 +1,35 @@
-import { openai } from "@ai-sdk/openai"
 import { Agent } from "@convex-dev/agent"
+import { createOpenRouter } from "@openrouter/ai-sdk-provider"
+import { paginationOptsValidator } from "convex/server"
 import { v } from "convex/values"
+import { createOllama } from "ollama-ai-provider"
 import { components } from "./_generated/api"
 import { action, mutation, query } from "./_generated/server"
 import { betterAuthComponent } from "./auth"
 
-const supportAgent = new Agent(components.agent, {
-  chat: openai.chat("gpt-4o-mini"),
-  textEmbedding: openai.embedding("text-embedding-3-small"),
-  instructions: "You are a helpful assistant.",
+const openrouter = createOpenRouter({
+  apiKey: process.env.OPENROUTER_API_KEY,
 })
 
-// Use the agent from within a normal action:
+const ollama = createOllama()
+
+const superAgent = new Agent(components.agent, {
+  chat: openrouter.chat("deepseek/deepseek-r1-0528-qwen3-8b:free"),
+  textEmbedding: ollama.embedding("bge-m3"),
+  instructions:
+    "You are an assistant that helps create and manage tasks, which consists of coordinating other agents. " +
+    "You can search, create, and merge agents. " +
+    "Be willing to undo mistakes and get better. When in doubt, merge agents. " +
+    "When passing IDs, you MUST pass a real ID verbatim. " +
+    "If you don't have an ID, search for one first.",
+  contextOptions: {
+    recentMessages: 20,
+    searchOtherThreads: true,
+    excludeToolMessages: false,
+  },
+  maxSteps: 10,
+})
+
 export const createThreadAndPrompt = action({
   args: { prompt: v.string() },
   handler: async (ctx, { prompt }) => {
@@ -19,7 +37,7 @@ export const createThreadAndPrompt = action({
     if (!userId) {
       return null
     }
-    const { threadId, thread } = await supportAgent.createThread(ctx, {
+    const { threadId, thread } = await superAgent.createThread(ctx, {
       userId,
     })
     // Creates a user message with the prompt, and an assistant reply message.
@@ -41,28 +59,23 @@ export const continueThread = action({
   },
 })
 
-// Public query to fetch all agents for the current user
 export const getAgentsForCurrentUser = query({
-  args: {},
-  handler: async (ctx) => {
+  args: { paginationOpts: paginationOptsValidator },
+  handler: async (ctx, args) => {
     const userId = await betterAuthComponent.getAuthUserId(ctx)
     if (!userId) return []
     // Assuming agents are stored in the 'agents' table with a userId field
     return await ctx.db
       .query("agents")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .collect()
+      .paginate(args.paginationOpts)
   },
 })
 
-// Mutation to create a new agent
 export const createAgent = mutation({
   args: {
-    videoId: v.id("videos"),
-    type: v.union(v.literal("title"), v.literal("description"), v.literal("thumbnail"), v.literal("tweets")),
-    draft: v.string(),
-    thumbnailUrl: v.optional(v.string()),
-    thumbnailStorageId: v.optional(v.id("_storage")),
+    name: v.string(),
+    taskId: v.optional(v.id("tasks")),
     connections: v.optional(v.array(v.string())),
     canvasPosition: v.object({ x: v.number(), y: v.number() }),
   },
@@ -71,12 +84,9 @@ export const createAgent = mutation({
     if (!userId) throw new Error("Not authenticated")
     const now = Date.now()
     const agentId = await ctx.db.insert("agents", {
-      videoId: args.videoId,
       userId,
-      type: args.type,
-      draft: args.draft,
-      thumbnailUrl: args.thumbnailUrl,
-      thumbnailStorageId: args.thumbnailStorageId,
+      name: args.name,
+      taskId: args.taskId,
       connections: args.connections ?? [],
       chatHistory: [],
       canvasPosition: args.canvasPosition,
@@ -87,7 +97,6 @@ export const createAgent = mutation({
   },
 })
 
-// Mutation to update an agent
 export const updateAgent = mutation({
   args: {
     agentId: v.id("agents"),

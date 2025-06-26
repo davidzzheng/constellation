@@ -1,15 +1,14 @@
 "use client"
 
-import { convexQuery } from "@convex-dev/react-query"
-import { useSuspenseQuery } from "@tanstack/react-query"
+import { useConvexPaginatedQuery } from "@convex-dev/react-query"
 import { Link, useLocation } from "@tanstack/react-router"
 import { Bot, ChevronRight, Home, Plus, SquareTerminal } from "lucide-react"
-import { Suspense, useMemo } from "react"
 import { api } from "~/api"
 import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
@@ -20,29 +19,19 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/colla
 
 export function NavMain() {
   const { pathname } = useLocation()
-  const { data: agents } = useSuspenseQuery(convexQuery(api.agent.getAgentsForCurrentUser, {}))
-  const { data: tasks } = useSuspenseQuery(convexQuery(api.tasks.getTasksForCurrentUser, {}))
 
-  const DefaultAgentMenuItem = () => (
-    <SidebarMenuItem>
-      <SidebarMenuButton tooltip="Agents" asChild isActive={pathname === "/app/agents"}>
-        <Link to="/app/agents">
-          <Bot />
-          Agents
-        </Link>
-      </SidebarMenuButton>
-    </SidebarMenuItem>
+  const { results: agents } = useConvexPaginatedQuery(
+    api.agent.getAgentsForCurrentUser,
+    { paginationOpts: {} },
+    { initialNumItems: 5 },
   )
 
-  const DefaultTasksMenuItem = () => (
-    <SidebarMenuItem>
-      <SidebarMenuButton tooltip="Tasks" asChild isActive={pathname === "/app/tasks"}>
-        <Link to="/app/tasks">
-          <SquareTerminal />
-          Tasks
-        </Link>
-      </SidebarMenuButton>
-    </SidebarMenuItem>
+  const { results: tasks } = useConvexPaginatedQuery(
+    api.tasks.getTasksForCurrentUser,
+    {
+      paginationOpts: {},
+    },
+    { initialNumItems: 5 },
   )
 
   return (
@@ -64,65 +53,83 @@ export function NavMain() {
           </SidebarMenuButton>
         </SidebarMenuItem>
 
-        <Suspense fallback={<DefaultAgentMenuItem />}>
-          {agents.length > 0 ? (
-            <Collapsible asChild defaultOpen={pathname === "/app/agents"} className="group/collapsible">
-              <SidebarMenuItem>
-                <CollapsibleTrigger asChild>
-                  <SidebarMenuButton tooltip="Agents" isActive={pathname === "/app/agents"} className="w-full">
-                    <Bot />
-                    Agents
-                    <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                  </SidebarMenuButton>
-                </CollapsibleTrigger>
+        {tasks.length > 0 ? (
+          <Collapsible asChild defaultOpen={pathname === "/app/tasks"} className="group/collapsible">
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Agents" isActive={pathname === "/app/tasks"} className="w-full">
+                <Link to="/app/tasks">
+                  <SquareTerminal />
+                  Tasks
+                </Link>
+              </SidebarMenuButton>
+              <CollapsibleTrigger asChild>
+                <SidebarMenuAction>
+                  <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                </SidebarMenuAction>
+              </CollapsibleTrigger>
 
-                <CollapsibleContent>
-                  <SidebarMenuSub>
-                    {agents.map((agent) => (
-                      <SidebarMenuSubItem key={agent._id}>
-                        <SidebarMenuSubButton asChild>
-                          <Link to={`/app/agents/${agent._id}`}>{agent.name}</Link>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    ))}
-                  </SidebarMenuSub>
-                </CollapsibleContent>
-              </SidebarMenuItem>
-            </Collapsible>
-          ) : (
-            <DefaultAgentMenuItem />
-          )}
-        </Suspense>
+              <CollapsibleContent>
+                <SidebarMenuSub>
+                  {tasks.map((task) => (
+                    <SidebarMenuSubItem key={task._id}>
+                      <SidebarMenuSubButton asChild isActive={pathname === `/app/tasks/${task._id}`}>
+                        <Link to="/app/tasks/$id" params={{ id: task._id }}>
+                          {task.title}
+                        </Link>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  ))}
+                </SidebarMenuSub>
+              </CollapsibleContent>
+            </SidebarMenuItem>
+          </Collapsible>
+        ) : (
+          <SidebarMenuItem>
+            <SidebarMenuButton tooltip="Tasks" asChild isActive={pathname === "/app/tasks"}>
+              <Link to="/app/tasks">
+                <SquareTerminal />
+                Tasks
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        )}
 
-        <Suspense fallback={<DefaultTasksMenuItem />}>
-          {tasks.length > 0 ? (
-            <Collapsible asChild defaultOpen={pathname === "/app/tasks"} className="group/collapsible">
-              <SidebarMenuItem>
-                <CollapsibleTrigger asChild>
-                  <SidebarMenuButton tooltip="Agents" isActive={pathname === "/app/tasks"} className="w-full">
-                    <SquareTerminal />
-                    Tasks
-                    <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                  </SidebarMenuButton>
-                </CollapsibleTrigger>
+        {agents.length > 0 ? (
+          <Collapsible asChild defaultOpen={pathname === "/app/agents"} className="group/collapsible">
+            <SidebarMenuItem>
+              <CollapsibleTrigger asChild>
+                <SidebarMenuButton tooltip="Agents" isActive={pathname === "/app/agents"} className="w-full">
+                  <Bot />
+                  Agents
+                  <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                </SidebarMenuButton>
+              </CollapsibleTrigger>
 
-                <CollapsibleContent>
-                  <SidebarMenuSub>
-                    {tasks.map((task) => (
-                      <SidebarMenuSubItem key={task._id}>
-                        <SidebarMenuSubButton asChild>
-                          <Link to={`/app/tasks/${task._id}`}>{task.name}</Link>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    ))}
-                  </SidebarMenuSub>
-                </CollapsibleContent>
-              </SidebarMenuItem>
-            </Collapsible>
-          ) : (
-            <DefaultTasksMenuItem />
-          )}
-        </Suspense>
+              <CollapsibleContent>
+                <SidebarMenuSub>
+                  {agents.map((agent) => (
+                    <SidebarMenuSubItem key={agent._id}>
+                      <SidebarMenuSubButton asChild isActive={pathname === `/app/agents/${agent._id}`}>
+                        <Link to="/app/agents/$id" params={{ id: agent._id }}>
+                          {agent.name}
+                        </Link>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  ))}
+                </SidebarMenuSub>
+              </CollapsibleContent>
+            </SidebarMenuItem>
+          </Collapsible>
+        ) : (
+          <SidebarMenuItem>
+            <SidebarMenuButton tooltip="Agents" asChild isActive={pathname === "/app/agents"}>
+              <Link to="/app/agents">
+                <Bot />
+                Agents
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        )}
       </SidebarMenu>
     </SidebarGroup>
   )

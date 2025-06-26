@@ -10,7 +10,6 @@ const schema = defineSchema({
     userId: v.string(),
     title: v.string(),
     description: v.optional(v.string()),
-    thumbnail: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
     isArchived: v.boolean(),
@@ -20,14 +19,14 @@ const schema = defineSchema({
     .index("by_user_archived", ["userId", "isArchived"]),
 
   agents: defineTable({
-    videoId: v.id("videos"),
     userId: v.string(),
     taskId: v.optional(v.id("tasks")),
-    type: v.union(v.literal("title"), v.literal("description"), v.literal("thumbnail"), v.literal("tweets")),
-    draft: v.string(),
-    thumbnailUrl: v.optional(v.string()),
-    thumbnailStorageId: v.optional(v.id("_storage")),
+    name: v.string(),
     connections: v.array(v.string()),
+    canvasPosition: v.object({
+      x: v.number(),
+      y: v.number(),
+    }),
     chatHistory: v.array(
       v.object({
         role: v.union(v.literal("user"), v.literal("ai")),
@@ -35,32 +34,16 @@ const schema = defineSchema({
         timestamp: v.number(),
       }),
     ),
-    canvasPosition: v.object({
-      x: v.number(),
-      y: v.number(),
-    }),
+    metadata: v.optional(v.any()),
     status: v.union(v.literal("idle"), v.literal("generating"), v.literal("ready"), v.literal("error")),
     createdAt: v.number(),
   })
     .index("by_user", ["userId"])
-    .index("by_task", ["taskId"])
-    .index("by_type", ["type"]),
-
-  profiles: defineTable({
-    userId: v.string(),
-    channelName: v.string(),
-    contentType: v.string(),
-    niche: v.string(),
-    links: v.array(v.string()),
-    tone: v.optional(v.string()),
-    targetAudience: v.optional(v.string()),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  }).index("by_user", ["userId"]),
+    .index("by_task", ["taskId"]),
 
   canvases: defineTable({
     userId: v.string(),
-    organizationId: v.string(),
+    organizationId: v.optional(v.string()),
     taskId: v.id("tasks"),
     nodes: v.array(
       v.object({

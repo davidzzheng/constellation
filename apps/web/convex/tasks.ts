@@ -1,27 +1,25 @@
+import { paginationOptsValidator } from "convex/server"
 import { v } from "convex/values"
 import { mutation, query } from "./_generated/server"
 import { betterAuthComponent } from "./auth"
 
-// Public query to fetch all tasks for the current user
 export const getTasksForCurrentUser = query({
-  args: {},
-  handler: async (ctx) => {
+  args: { paginationOpts: paginationOptsValidator },
+  handler: async (ctx, args) => {
     const userId = await betterAuthComponent.getAuthUserId(ctx)
     if (!userId) return []
-    // Assuming tasks are stored in the 'tasks' table with a userId field
+
     return await ctx.db
       .query("tasks")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .collect()
+      .paginate(args.paginationOpts)
   },
 })
 
-// Mutation to create a new task
 export const createTask = mutation({
   args: {
     title: v.string(),
     description: v.optional(v.string()),
-    thumbnail: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await betterAuthComponent.getAuthUserId(ctx)
@@ -31,7 +29,6 @@ export const createTask = mutation({
       userId,
       title: args.title,
       description: args.description,
-      thumbnail: args.thumbnail,
       createdAt: now,
       updatedAt: now,
       isArchived: false,
@@ -40,7 +37,18 @@ export const createTask = mutation({
   },
 })
 
-// Mutation to update a task
+export const getTask = query({
+  args: { taskId: v.id("tasks") },
+  handler: async (ctx, args) => {
+    const userId = await betterAuthComponent.getAuthUserId(ctx)
+    if (!userId) throw new Error("Not authenticated")
+    const task = await ctx.db.get(args.taskId)
+    if (!task) throw new Error("Task not found")
+    if (task.userId !== userId) throw new Error("Unauthorized")
+    return task
+  },
+})
+
 export const updateTask = mutation({
   args: {
     taskId: v.id("tasks"),
@@ -53,7 +61,8 @@ export const updateTask = mutation({
     const userId = await betterAuthComponent.getAuthUserId(ctx)
     if (!userId) throw new Error("Not authenticated")
     const task = await ctx.db.get(args.taskId)
-    if (!task || task.userId !== userId) throw new Error("Not found or unauthorized")
+    if (!task) throw new Error("Task not found")
+    if (task.userId !== userId) throw new Error("Unauthorized")
     const patch: any = { updatedAt: Date.now() }
     if (args.title !== undefined) patch.title = args.title
     if (args.description !== undefined) patch.description = args.description
@@ -71,7 +80,8 @@ export const deleteTask = mutation({
     const userId = await betterAuthComponent.getAuthUserId(ctx)
     if (!userId) throw new Error("Not authenticated")
     const task = await ctx.db.get(args.taskId)
-    if (!task || task.userId !== userId) throw new Error("Not found or unauthorized")
+    if (!task) throw new Error("Task not found")
+    if (task.userId !== userId) throw new Error("Unauthorized")
     await ctx.db.delete(args.taskId)
     return true
   },

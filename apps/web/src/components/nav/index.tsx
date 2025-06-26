@@ -42,7 +42,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroup>
           <Tooltip>
             <TooltipTrigger asChild>
-              <SidebarTrigger className="-right-3.5 absolute bottom-4.5 transition-transform ease-linear group-data-[state=collapsed]:right-2.5" />
+              <SidebarTrigger className="-right-3.5 absolute bottom-4 transition-transform ease-linear group-data-[state=collapsed]:right-2.5" />
             </TooltipTrigger>
             <TooltipContent side="right" className="font-medium text-xs uppercase">
               {isMacLike ? "⌘" : "Ctrl + "}

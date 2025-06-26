@@ -47,7 +47,7 @@ export const Route = createRootRouteWithContext<{
       },
       ...seo({
         title: "Constellation",
-        description: `Constellation is an ergonomic agentic platform for the modern web`,
+        description: `Constellation is a collaborative agentic platform for the modern web`,
       }),
     ],
     links: [
@@ -73,12 +73,12 @@ export const Route = createRootRouteWithContext<{
       { rel: "icon", href: "/favicon.ico" },
     ],
   }),
-  beforeLoad: async (ctx) => {
+  beforeLoad: async ({ context }) => {
     const auth = await fetchAuth()
     const { userId, token } = auth
 
     if (token) {
-      ctx.context.convexQueryClient.serverHttpClient?.setAuth(token)
+      context.convexQueryClient.serverHttpClient?.setAuth(token)
     }
 
     return { userId, token }

@@ -3,11 +3,10 @@ import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { api } from "~/api"
 
-export const Route = createFileRoute("/app/agents")({
+export const Route = createFileRoute("/app/agents/")({
   component: AgentsDashboard,
-  loader: () => ({
-    crumb: "Agents",
-  }),
+  loader: async ({ context }) =>
+    await context.queryClient.ensureQueryData(convexQuery(api.agent.getAgentsForCurrentUser, {})),
 })
 
 function AgentsDashboard() {
@@ -20,7 +19,7 @@ function AgentsDashboard() {
       <h1>My Agents</h1>
       <ul>
         {agents.map((agent) => (
-          <li key={agent._id}>{agent.name || agent.draft}</li>
+          <li key={agent._id}>{agent.name}</li>
         ))}
       </ul>
     </div>
