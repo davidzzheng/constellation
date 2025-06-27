@@ -2,10 +2,12 @@ import { Agent } from "@convex-dev/agent"
 import { createOpenRouter } from "@openrouter/ai-sdk-provider"
 import { paginationOptsValidator } from "convex/server"
 import { v } from "convex/values"
+import { getPage } from "convex-helpers/server/pagination"
 import { createOllama } from "ollama-ai-provider"
 import { components } from "./_generated/api"
-import { action, mutation, query } from "./_generated/server"
+import { action, internalQuery, mutation, query } from "./_generated/server"
 import { betterAuthComponent } from "./auth"
+import schema from "./schema"
 
 const openrouter = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY,
@@ -72,6 +74,39 @@ export const getAgentsForCurrentUser = query({
   },
 })
 
+export const getMostRecentAgents = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const userId = await betterAuthComponent.getAuthUserId(ctx)
+    if (!userId) return []
+
+    return await ctx.db
+      .query("agents")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .order("desc")
+      .take(args.limit ?? 5)
+  },
+})
+
+export const getAgentsPage = query({
+  args: {
+    pageSize: v.number(),
+    order: v.union(v.literal("asc"), v.literal("desc")),
+    index: v.union(
+      v.literal("by_user"),
+      v.literal("by_task"),
+      v.literal("by_status"),
+      v.literal("by_created"),
+      v.literal("by_updated"),
+      v.literal("by_archived"),
+    ),
+    endIndexKey: v.optional(v.any()),
+  },
+  handler: async (ctx, args) => {
+    return getPage(ctx, { table: "agents", schema, ...args })
+  },
+})
+
 export const createAgent = mutation({
   args: {
     name: v.string(),
@@ -91,9 +126,20 @@ export const createAgent = mutation({
       chatHistory: [],
       canvasPosition: args.canvasPosition,
       status: "idle",
+      isArchived: false,
       createdAt: now,
+      updatedAt: now,
     })
     return agentId
+  },
+})
+
+export const getAgent = query({
+  args: { agentId: v.id("agents") },
+  handler: async (ctx, args) => {
+    const agent = await ctx.db.get(args.agentId)
+    if (!agent) throw new Error("Agent not found")
+    return agent
   },
 })
 

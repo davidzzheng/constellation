@@ -1,6 +1,7 @@
 "use client"
 
-import { useConvexPaginatedQuery } from "@convex-dev/react-query"
+import { convexQuery } from "@convex-dev/react-query"
+import { useQueries } from "@tanstack/react-query"
 import { Link, useLocation } from "@tanstack/react-router"
 import { Bot, ChevronRight, Home, Plus, SquareTerminal } from "lucide-react"
 import { api } from "~/api"
@@ -20,19 +21,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/colla
 export function NavMain() {
   const { pathname } = useLocation()
 
-  const { results: agents } = useConvexPaginatedQuery(
-    api.agent.getAgentsForCurrentUser,
-    { paginationOpts: {} },
-    { initialNumItems: 5 },
-  )
-
-  const { results: tasks } = useConvexPaginatedQuery(
-    api.tasks.getTasksForCurrentUser,
-    {
-      paginationOpts: {},
-    },
-    { initialNumItems: 5 },
-  )
+  const [{ data: agents = [] }, { data: tasks = [] }] = useQueries({
+    queries: [convexQuery(api.agents.getMostRecentAgents, {}), convexQuery(api.tasks.getMostRecentTasks, {})],
+  })
 
   return (
     <SidebarGroup>
@@ -56,7 +47,7 @@ export function NavMain() {
         {tasks.length > 0 ? (
           <Collapsible asChild defaultOpen={pathname === "/app/tasks"} className="group/collapsible">
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Agents" isActive={pathname === "/app/tasks"} className="w-full">
+              <SidebarMenuButton asChild tooltip="Tasks" isActive={pathname === "/app/tasks"} className="w-full">
                 <Link to="/app/tasks">
                   <SquareTerminal />
                   Tasks
@@ -110,7 +101,7 @@ export function NavMain() {
                   {agents.map((agent) => (
                     <SidebarMenuSubItem key={agent._id}>
                       <SidebarMenuSubButton asChild isActive={pathname === `/app/agents/${agent._id}`}>
-                        <Link to="/app/agents/$id" params={{ id: agent._id }}>
+                        <Link to="/app/agents/$agentId" params={{ agentId: agent._id }}>
                           {agent.name}
                         </Link>
                       </SidebarMenuSubButton>

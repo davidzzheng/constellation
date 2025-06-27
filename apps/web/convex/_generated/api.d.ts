@@ -8,7 +8,7 @@
  * @module
  */
 
-import type * as agent from "../agent.js";
+import type * as agents from "../agents.js";
 import type * as auth from "../auth.js";
 import type * as canvas from "../canvas.js";
 import type * as chat from "../chat.js";
@@ -40,7 +40,7 @@ import type {
  * ```
  */
 declare const fullApi: ApiFromModules<{
-  agent: typeof agent;
+  agents: typeof agents;
   auth: typeof auth;
   canvas: typeof canvas;
   chat: typeof chat;
@@ -115,7 +115,7 @@ export declare const components: {
         "mutation",
         "internal",
         { fileIds: Array<string>; force?: boolean },
-        null
+        Array<string>
       >;
       get: FunctionReference<
         "query",

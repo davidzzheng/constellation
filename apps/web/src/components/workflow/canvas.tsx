@@ -57,12 +57,12 @@ const Workflow = () => {
   const organizationId = orgCtx?.activeOrganization?.id
 
   // Convex agent mutations
-  const createAgent = useMutation(api.agent.createAgent)
-  const updateAgent = useMutation(api.agent.updateAgent)
-  const deleteAgent = useMutation(api.agent.deleteAgent)
+  const createAgent = useMutation(api.agents.createAgent)
+  const updateAgent = useMutation(api.agents.updateAgent)
+  const deleteAgent = useMutation(api.agents.deleteAgent)
 
   // Load agents from Convex
-  const agents = useQuery(api.agent.getAgentsForCurrentUser, {})
+  const agents = useQuery(api.agents.getAgentsForCurrentUser, {})
 
   // Sync local state with Convex agents
   useEffect(() => {

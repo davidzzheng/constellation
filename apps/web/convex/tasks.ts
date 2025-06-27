@@ -1,7 +1,9 @@
 import { paginationOptsValidator } from "convex/server"
 import { v } from "convex/values"
+import { getPage } from "convex-helpers/server/pagination"
 import { mutation, query } from "./_generated/server"
 import { betterAuthComponent } from "./auth"
+import schema from "./schema"
 
 export const getTasksForCurrentUser = query({
   args: { paginationOpts: paginationOptsValidator },
@@ -13,6 +15,32 @@ export const getTasksForCurrentUser = query({
       .query("tasks")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .paginate(args.paginationOpts)
+  },
+})
+
+export const getTasksPage = query({
+  args: {
+    pageSize: v.number(),
+    order: v.union(v.literal("asc"), v.literal("desc")),
+    index: v.union(v.literal("by_user"), v.literal("by_created"), v.literal("by_updated"), v.literal("by_archived")),
+    endIndexKey: v.optional(v.any()),
+  },
+  handler: async (ctx, args) => {
+    return getPage(ctx, { table: "tasks", schema, ...args })
+  },
+})
+
+export const getMostRecentTasks = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const userId = await betterAuthComponent.getAuthUserId(ctx)
+    if (!userId) return []
+
+    return await ctx.db
+      .query("tasks")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .order("desc")
+      .take(args.limit ?? 5)
   },
 })
 

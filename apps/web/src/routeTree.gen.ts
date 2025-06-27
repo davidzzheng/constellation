@@ -22,7 +22,9 @@ import { Route as AppAgentsRouteRouteImport } from './routes/app/agents/route'
 import { Route as AppTasksIndexRouteImport } from './routes/app/tasks/index'
 import { Route as AppAgentsIndexRouteImport } from './routes/app/agents/index'
 import { Route as AppTasksIdRouteImport } from './routes/app/tasks/$id'
-import { Route as AppAgentsIdRouteImport } from './routes/app/agents/$id'
+import { Route as AppAgentsAgentIdRouteRouteImport } from './routes/app/agents/$agentId/route'
+import { Route as AppAgentsAgentIdIndexRouteImport } from './routes/app/agents/$agentId/index'
+import { Route as AppAgentsAgentIdThreadIdIndexRouteImport } from './routes/app/agents/$agentId/$threadId/index'
 import { ServerRoute as ApiAuthSplatServerRouteImport } from './routes/api/auth/$'
 
 const rootServerRouteImport = createServerRootRoute()
@@ -81,11 +83,22 @@ const AppTasksIdRoute = AppTasksIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AppTasksRouteRoute,
 } as any)
-const AppAgentsIdRoute = AppAgentsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
+const AppAgentsAgentIdRouteRoute = AppAgentsAgentIdRouteRouteImport.update({
+  id: '/$agentId',
+  path: '/$agentId',
   getParentRoute: () => AppAgentsRouteRoute,
 } as any)
+const AppAgentsAgentIdIndexRoute = AppAgentsAgentIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppAgentsAgentIdRouteRoute,
+} as any)
+const AppAgentsAgentIdThreadIdIndexRoute =
+  AppAgentsAgentIdThreadIdIndexRouteImport.update({
+    id: '/$threadId/',
+    path: '/$threadId/',
+    getParentRoute: () => AppAgentsAgentIdRouteRoute,
+  } as any)
 const ApiAuthSplatServerRoute = ApiAuthSplatServerRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -100,20 +113,23 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof authSignInRoute
   '/sign-up': typeof authSignUpRoute
   '/app/': typeof AppIndexRoute
-  '/app/agents/$id': typeof AppAgentsIdRoute
+  '/app/agents/$agentId': typeof AppAgentsAgentIdRouteRouteWithChildren
   '/app/tasks/$id': typeof AppTasksIdRoute
   '/app/agents/': typeof AppAgentsIndexRoute
   '/app/tasks/': typeof AppTasksIndexRoute
+  '/app/agents/$agentId/': typeof AppAgentsAgentIdIndexRoute
+  '/app/agents/$agentId/$threadId': typeof AppAgentsAgentIdThreadIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof authRouteRouteWithChildren
   '/sign-in': typeof authSignInRoute
   '/sign-up': typeof authSignUpRoute
   '/app': typeof AppIndexRoute
-  '/app/agents/$id': typeof AppAgentsIdRoute
   '/app/tasks/$id': typeof AppTasksIdRoute
   '/app/agents': typeof AppAgentsIndexRoute
   '/app/tasks': typeof AppTasksIndexRoute
+  '/app/agents/$agentId': typeof AppAgentsAgentIdIndexRoute
+  '/app/agents/$agentId/$threadId': typeof AppAgentsAgentIdThreadIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -125,10 +141,12 @@ export interface FileRoutesById {
   '/(auth)/sign-in': typeof authSignInRoute
   '/(auth)/sign-up': typeof authSignUpRoute
   '/app/': typeof AppIndexRoute
-  '/app/agents/$id': typeof AppAgentsIdRoute
+  '/app/agents/$agentId': typeof AppAgentsAgentIdRouteRouteWithChildren
   '/app/tasks/$id': typeof AppTasksIdRoute
   '/app/agents/': typeof AppAgentsIndexRoute
   '/app/tasks/': typeof AppTasksIndexRoute
+  '/app/agents/$agentId/': typeof AppAgentsAgentIdIndexRoute
+  '/app/agents/$agentId/$threadId/': typeof AppAgentsAgentIdThreadIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -140,20 +158,23 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/app/'
-    | '/app/agents/$id'
+    | '/app/agents/$agentId'
     | '/app/tasks/$id'
     | '/app/agents/'
     | '/app/tasks/'
+    | '/app/agents/$agentId/'
+    | '/app/agents/$agentId/$threadId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/sign-in'
     | '/sign-up'
     | '/app'
-    | '/app/agents/$id'
     | '/app/tasks/$id'
     | '/app/agents'
     | '/app/tasks'
+    | '/app/agents/$agentId'
+    | '/app/agents/$agentId/$threadId'
   id:
     | '__root__'
     | '/'
@@ -164,10 +185,12 @@ export interface FileRouteTypes {
     | '/(auth)/sign-in'
     | '/(auth)/sign-up'
     | '/app/'
-    | '/app/agents/$id'
+    | '/app/agents/$agentId'
     | '/app/tasks/$id'
     | '/app/agents/'
     | '/app/tasks/'
+    | '/app/agents/$agentId/'
+    | '/app/agents/$agentId/$threadId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -276,12 +299,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTasksIdRouteImport
       parentRoute: typeof AppTasksRouteRoute
     }
-    '/app/agents/$id': {
-      id: '/app/agents/$id'
-      path: '/$id'
-      fullPath: '/app/agents/$id'
-      preLoaderRoute: typeof AppAgentsIdRouteImport
+    '/app/agents/$agentId': {
+      id: '/app/agents/$agentId'
+      path: '/$agentId'
+      fullPath: '/app/agents/$agentId'
+      preLoaderRoute: typeof AppAgentsAgentIdRouteRouteImport
       parentRoute: typeof AppAgentsRouteRoute
+    }
+    '/app/agents/$agentId/': {
+      id: '/app/agents/$agentId/'
+      path: '/'
+      fullPath: '/app/agents/$agentId/'
+      preLoaderRoute: typeof AppAgentsAgentIdIndexRouteImport
+      parentRoute: typeof AppAgentsAgentIdRouteRoute
+    }
+    '/app/agents/$agentId/$threadId/': {
+      id: '/app/agents/$agentId/$threadId/'
+      path: '/$threadId'
+      fullPath: '/app/agents/$agentId/$threadId'
+      preLoaderRoute: typeof AppAgentsAgentIdThreadIdIndexRouteImport
+      parentRoute: typeof AppAgentsAgentIdRouteRoute
     }
   }
 }
@@ -311,13 +348,28 @@ const authRouteRouteWithChildren = authRouteRoute._addFileChildren(
   authRouteRouteChildren,
 )
 
+interface AppAgentsAgentIdRouteRouteChildren {
+  AppAgentsAgentIdIndexRoute: typeof AppAgentsAgentIdIndexRoute
+  AppAgentsAgentIdThreadIdIndexRoute: typeof AppAgentsAgentIdThreadIdIndexRoute
+}
+
+const AppAgentsAgentIdRouteRouteChildren: AppAgentsAgentIdRouteRouteChildren = {
+  AppAgentsAgentIdIndexRoute: AppAgentsAgentIdIndexRoute,
+  AppAgentsAgentIdThreadIdIndexRoute: AppAgentsAgentIdThreadIdIndexRoute,
+}
+
+const AppAgentsAgentIdRouteRouteWithChildren =
+  AppAgentsAgentIdRouteRoute._addFileChildren(
+    AppAgentsAgentIdRouteRouteChildren,
+  )
+
 interface AppAgentsRouteRouteChildren {
-  AppAgentsIdRoute: typeof AppAgentsIdRoute
+  AppAgentsAgentIdRouteRoute: typeof AppAgentsAgentIdRouteRouteWithChildren
   AppAgentsIndexRoute: typeof AppAgentsIndexRoute
 }
 
 const AppAgentsRouteRouteChildren: AppAgentsRouteRouteChildren = {
-  AppAgentsIdRoute: AppAgentsIdRoute,
+  AppAgentsAgentIdRouteRoute: AppAgentsAgentIdRouteRouteWithChildren,
   AppAgentsIndexRoute: AppAgentsIndexRoute,
 }
 

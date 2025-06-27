@@ -15,8 +15,9 @@ const schema = defineSchema({
     isArchived: v.boolean(),
   })
     .index("by_user", ["userId"])
+    .index("by_created", ["createdAt"])
     .index("by_updated", ["updatedAt"])
-    .index("by_user_archived", ["userId", "isArchived"]),
+    .index("by_archived", ["isArchived"]),
 
   agents: defineTable({
     userId: v.string(),
@@ -37,9 +38,15 @@ const schema = defineSchema({
     metadata: v.optional(v.any()),
     status: v.union(v.literal("idle"), v.literal("generating"), v.literal("ready"), v.literal("error")),
     createdAt: v.number(),
+    updatedAt: v.number(),
+    isArchived: v.boolean(),
   })
     .index("by_user", ["userId"])
-    .index("by_task", ["taskId"]),
+    .index("by_task", ["taskId"])
+    .index("by_status", ["status"])
+    .index("by_created", ["createdAt"])
+    .index("by_updated", ["updatedAt"])
+    .index("by_archived", ["isArchived"]),
 
   canvases: defineTable({
     userId: v.string(),

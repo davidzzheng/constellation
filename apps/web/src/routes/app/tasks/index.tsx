@@ -1,10 +1,10 @@
 import { convexQuery, useConvexMutation, useConvexPaginatedQuery } from "@convex-dev/react-query"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation, useSuspenseQuery } from "@tanstack/react-query"
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
+import { useMutation, useQuery } from "@tanstack/react-query"
+import { createFileRoute, Link, useBlocker, useNavigate } from "@tanstack/react-router"
 import { type ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table"
 import { Plus } from "lucide-react"
-import { Suspense } from "react"
+import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
@@ -103,21 +103,20 @@ const columns: ColumnDef<Task>[] = [
 ]
 
 function RouteComponent() {
-  const navigate = useNavigate()
-  const {
-    results: data,
-    isLoading,
-    status,
-  } = useConvexPaginatedQuery(
-    api.tasks.getTasksForCurrentUser,
-    {},
-    {
-      initialNumItems: 10,
-    },
+  const navigate = useNavigate({ from: Route.fullPath })
+  const [pageNum, setPageNum] = useState(1)
+  const [cursors, setCursors] = useState<(string | null)[]>([null])
+  const [sorting, setSorting] = useState([])
+  const { data, isLoading, status } = useQuery(
+    convexQuery(api.tasks.getTasksPage, {
+      endIndexKey: cursors[pageNum - 1],
+      index: "by_updated",
+      pageSize: 10,
+      order: "desc",
+    }),
   )
-
   const table = useReactTable({
-    data,
+    data: data?.page ?? [],
     columns,
     getCoreRowModel: getCoreRowModel(),
   })
@@ -246,7 +245,7 @@ function RouteComponent() {
             selected.
           </div>
         )}
-        {status === "CanLoadMore" ? (
+        {data?.hasMore ? (
           <div className="space-x-2">
             <Button
               variant="outline"

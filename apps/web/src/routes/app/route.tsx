@@ -36,12 +36,19 @@ function RouteComponent() {
       }
     })
 
+  const canvasView = matches.some((match) => isMatch(match, "loaderData.canvasView"))
+
   return (
     <SidebarProvider>
       <AppSidebar variant="floating" />
       <SidebarInset>
-        <header className="flex shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 p-6">
+        <header className="flex shrink-0 items-center gap-2 transition-[width,height] ease-linear">
+          <div
+            className={cn(
+              "m-4 flex items-center gap-2 px-3 py-2",
+              canvasView && "z-[1] rounded-lg bg-background shadow-lg",
+            )}
+          >
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
