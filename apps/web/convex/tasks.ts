@@ -57,9 +57,15 @@ export const createTask = mutation({
       userId,
       title: args.title,
       description: args.description,
-      createdAt: now,
       updatedAt: now,
       isArchived: false,
+      edges: [],
+      nodes: [],
+      viewport: {
+        x: 0,
+        y: 0,
+        zoom: 1,
+      },
     })
     return taskId
   },
@@ -82,7 +88,17 @@ export const updateTask = mutation({
     taskId: v.id("tasks"),
     title: v.optional(v.string()),
     description: v.optional(v.string()),
-    thumbnail: v.optional(v.string()),
+    edges: v.optional(v.array(v.object({ id: v.string(), source: v.string(), target: v.string() }))),
+    nodes: v.optional(
+      v.array(
+        v.object({
+          id: v.string(),
+          type: v.string(),
+          position: v.object({ x: v.number(), y: v.number() }),
+        }),
+      ),
+    ),
+    viewport: v.optional(v.object({ x: v.number(), y: v.number(), zoom: v.number() })),
     isArchived: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
@@ -94,7 +110,9 @@ export const updateTask = mutation({
     const patch: any = { updatedAt: Date.now() }
     if (args.title !== undefined) patch.title = args.title
     if (args.description !== undefined) patch.description = args.description
-    if (args.thumbnail !== undefined) patch.thumbnail = args.thumbnail
+    if (args.edges !== undefined) patch.edges = args.edges
+    if (args.nodes !== undefined) patch.nodes = args.nodes
+    if (args.viewport !== undefined) patch.viewport = args.viewport
     if (args.isArchived !== undefined) patch.isArchived = args.isArchived
     await ctx.db.patch(args.taskId, patch)
     return true

@@ -5,7 +5,7 @@ import { v } from "convex/values"
 import { getPage } from "convex-helpers/server/pagination"
 import { createOllama } from "ollama-ai-provider"
 import { components } from "./_generated/api"
-import { action, internalQuery, mutation, query } from "./_generated/server"
+import { action, mutation, query } from "./_generated/server"
 import { betterAuthComponent } from "./auth"
 import schema from "./schema"
 
@@ -42,22 +42,17 @@ export const createThreadAndPrompt = action({
     const { threadId, thread } = await superAgent.createThread(ctx, {
       userId,
     })
-    // Creates a user message with the prompt, and an assistant reply message.
     const result = await thread.generateText({ prompt })
     return { threadId, text: result.text }
   },
 })
 
-// Pick up where you left off, with the same or a different agent:
 export const continueThread = action({
   args: { prompt: v.string(), threadId: v.string() },
   handler: async (ctx, { prompt, threadId }) => {
-    // TODO: Implement continueThread logic with the correct agent instance
-    // const { thread } = await anotherAgent.continueThread(ctx, { threadId })
-    // This includes previous message history from the thread automatically.
-    // const result = await thread.generateText({ prompt })
-    // return result.text
-    throw new Error("continueThread not implemented")
+    const { thread } = await superAgent.continueThread(ctx, { threadId })
+    const result = await thread.generateText({ prompt })
+    return result.text
   },
 })
 
@@ -124,10 +119,8 @@ export const createAgent = mutation({
       taskId: args.taskId,
       connections: args.connections ?? [],
       chatHistory: [],
-      canvasPosition: args.canvasPosition,
       status: "idle",
       isArchived: false,
-      createdAt: now,
       updatedAt: now,
     })
     return agentId

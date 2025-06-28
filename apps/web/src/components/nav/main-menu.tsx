@@ -64,7 +64,7 @@ export function NavMain() {
                   {tasks.map((task) => (
                     <SidebarMenuSubItem key={task._id}>
                       <SidebarMenuSubButton asChild isActive={pathname === `/app/tasks/${task._id}`}>
-                        <Link to="/app/tasks/$id" params={{ id: task._id }}>
+                        <Link to="/app/tasks/$id" params={{ id: task._id }} draggable>
                           {task.title}
                         </Link>
                       </SidebarMenuSubButton>

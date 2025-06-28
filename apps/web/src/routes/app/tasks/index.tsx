@@ -1,7 +1,7 @@
-import { convexQuery, useConvexMutation, useConvexPaginatedQuery } from "@convex-dev/react-query"
+import { convexQuery, useConvexMutation } from "@convex-dev/react-query"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { createFileRoute, Link, useBlocker, useNavigate } from "@tanstack/react-router"
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { type ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table"
 import { Plus } from "lucide-react"
 import { useState } from "react"
@@ -76,11 +76,11 @@ const columns: ColumnDef<Task>[] = [
     enableColumnFilter: true,
   },
   {
-    accessorKey: "createdAt",
+    accessorKey: "_creationTime",
     header: "Created At",
     enableSorting: true,
     enableColumnFilter: true,
-    cell: ({ row }) => <span>{formatDateTime(row.getValue("createdAt"))}</span>,
+    cell: ({ row }) => <span>{formatDateTime(row.getValue("_creationTime"))}</span>,
   },
   {
     accessorKey: "updatedAt",

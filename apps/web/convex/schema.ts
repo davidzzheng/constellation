@@ -10,48 +10,6 @@ const schema = defineSchema({
     userId: v.string(),
     title: v.string(),
     description: v.optional(v.string()),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-    isArchived: v.boolean(),
-  })
-    .index("by_user", ["userId"])
-    .index("by_created", ["createdAt"])
-    .index("by_updated", ["updatedAt"])
-    .index("by_archived", ["isArchived"]),
-
-  agents: defineTable({
-    userId: v.string(),
-    taskId: v.optional(v.id("tasks")),
-    name: v.string(),
-    connections: v.array(v.string()),
-    canvasPosition: v.object({
-      x: v.number(),
-      y: v.number(),
-    }),
-    chatHistory: v.array(
-      v.object({
-        role: v.union(v.literal("user"), v.literal("ai")),
-        message: v.string(),
-        timestamp: v.number(),
-      }),
-    ),
-    metadata: v.optional(v.any()),
-    status: v.union(v.literal("idle"), v.literal("generating"), v.literal("ready"), v.literal("error")),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-    isArchived: v.boolean(),
-  })
-    .index("by_user", ["userId"])
-    .index("by_task", ["taskId"])
-    .index("by_status", ["status"])
-    .index("by_created", ["createdAt"])
-    .index("by_updated", ["updatedAt"])
-    .index("by_archived", ["isArchived"]),
-
-  canvases: defineTable({
-    userId: v.string(),
-    organizationId: v.optional(v.string()),
-    taskId: v.id("tasks"),
     nodes: v.array(
       v.object({
         id: v.string(),
@@ -78,10 +36,36 @@ const schema = defineSchema({
       zoom: v.number(),
     }),
     updatedAt: v.number(),
+    isArchived: v.boolean(),
   })
     .index("by_user", ["userId"])
-    .index("by_organization", ["organizationId"])
-    .index("by_task", ["taskId"]),
+    .index("by_created", ["_creationTime"])
+    .index("by_updated", ["updatedAt"])
+    .index("by_archived", ["isArchived"]),
+
+  agents: defineTable({
+    userId: v.string(),
+    taskId: v.optional(v.id("tasks")),
+    name: v.string(),
+    connections: v.array(v.string()),
+    chatHistory: v.array(
+      v.object({
+        role: v.union(v.literal("user"), v.literal("ai")),
+        message: v.string(),
+        timestamp: v.number(),
+      }),
+    ),
+    metadata: v.optional(v.any()),
+    status: v.union(v.literal("idle"), v.literal("generating"), v.literal("ready"), v.literal("error")),
+    updatedAt: v.number(),
+    isArchived: v.boolean(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_task", ["taskId"])
+    .index("by_status", ["status"])
+    .index("by_created", ["_creationTime"])
+    .index("by_updated", ["updatedAt"])
+    .index("by_archived", ["isArchived"]),
 })
 
 export default schema
