@@ -2,7 +2,7 @@
 
 import { convexQuery } from "@convex-dev/react-query"
 import { useQueries } from "@tanstack/react-query"
-import { Link, useLocation } from "@tanstack/react-router"
+import { isMatch, Link, useLocation, useMatches } from "@tanstack/react-router"
 import { Bot, ChevronRight, Home, Plus, SquareTerminal } from "lucide-react"
 import { api } from "~/api"
 import {
@@ -20,15 +20,22 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/colla
 
 export function NavMain() {
   const { pathname } = useLocation()
+  const matches = useMatches()
 
   const [{ data: agents = [] }, { data: tasks = [] }] = useQueries({
     queries: [convexQuery(api.agents.getMostRecentAgents, {}), convexQuery(api.tasks.getMostRecentTasks, {})],
   })
 
+  const canvasView = matches.some((match) => isMatch(match, "loaderData.canvasView"))
+
   return (
     <SidebarGroup>
       <SidebarMenuItem className="mb-4">
-        <SidebarMenuButton tooltip="Create" className="cursor-pointer bg-secondary dark:bg-primary">
+        <SidebarMenuButton
+          tooltip="Create"
+          className="cursor-pointer bg-secondary dark:bg-primary"
+          draggable={canvasView}
+        >
           <Plus />
           Create
         </SidebarMenuButton>
@@ -64,7 +71,7 @@ export function NavMain() {
                   {tasks.map((task) => (
                     <SidebarMenuSubItem key={task._id}>
                       <SidebarMenuSubButton asChild isActive={pathname === `/app/tasks/${task._id}`}>
-                        <Link to="/app/tasks/$id" params={{ id: task._id }} draggable>
+                        <Link to="/app/tasks/$id" params={{ id: task._id }} draggable={canvasView}>
                           {task.title}
                         </Link>
                       </SidebarMenuSubButton>
@@ -101,7 +108,7 @@ export function NavMain() {
                   {agents.map((agent) => (
                     <SidebarMenuSubItem key={agent._id}>
                       <SidebarMenuSubButton asChild isActive={pathname === `/app/agents/${agent._id}`}>
-                        <Link to="/app/agents/$agentId" params={{ agentId: agent._id }}>
+                        <Link to="/app/agents/$agentId" params={{ agentId: agent._id }} draggable={canvasView}>
                           {agent.name}
                         </Link>
                       </SidebarMenuSubButton>

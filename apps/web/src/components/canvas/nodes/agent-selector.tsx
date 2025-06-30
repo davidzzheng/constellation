@@ -1,43 +1,44 @@
-import { Handle, type NodeProps, Position } from "@xyflow/react"
+import type { NodeProps } from "@xyflow/react"
 import type { Doc, Id } from "convex/_generated/dataModel"
-import { useAction, useMutation, useQuery } from "convex/react"
-import { ChevronsUpDown, Plus } from "lucide-react"
-import { useRef, useState } from "react"
+import { useAction, useMutation } from "convex/react"
+import { AnimatePresence, MotionConfig, motion } from "motion/react"
+import { useEffect, useRef, useState } from "react"
+import useMeasure from "react-use-measure"
 import { api } from "~/api"
+import { AsyncSelect } from "~/components/ui/async-select"
 import { Button } from "~/components/ui/button"
-import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from "~/components/ui/command"
 import { Input } from "~/components/ui/input"
 import { Label } from "~/components/ui/label"
-import { BaseNode } from "./base"
-import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover"
 import { Textarea } from "~/components/ui/textarea"
+import { cn } from "~/lib/utils"
+import { BaseNode } from "./base"
+import { NodeStatusIndicator } from "./status-indicator"
 
 export type AgentCreatorNodeData = {
   taskId?: Id<"tasks">
-  canvasPosition?: { x: number; y: number }
 }
 
 export function AgentSelectorNode({ data = {}, selected }: NodeProps) {
   const nodeData = data as AgentCreatorNodeData
-  const [expanded, setExpanded] = useState(false)
   const [name, setName] = useState("")
   const [prompt, setPrompt] = useState("")
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [selectedAgentId, setSelectedAgentId] = useState<Id<"agents"> | "">("")
+  const [selectedAgentId, setSelectedAgentId] = useState<Id<"agents"> | string | undefined>()
   const createAgent = useMutation(api.agents.createAgent)
   const createThreadAndPrompt = useAction(api.agents.createThreadAndPrompt)
-  const agentsData = useQuery(api.agents.getAgentsForCurrentUser, {
-    paginationOpts: { numItems: 100, cursor: null },
-  })
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [contentRef, { height: heightContent }] = useMeasure()
+  const [menuRef, { width: widthContainer }] = useMeasure()
+  const [maxWidth, setMaxWidth] = useState(0)
 
-  let agentOptions: Doc<"agents">[] = []
-  if (agentsData && !Array.isArray(agentsData) && agentsData.page) {
-    agentOptions = agentsData.page
-  }
-  const selectedAgent = agentOptions.find((a) => a._id === selectedAgentId)
+  const queryAgents = useMutation(api.agents.queryAgents)
+
+  useEffect(() => {
+    if (!widthContainer || maxWidth > 0) return
+
+    setMaxWidth(widthContainer)
+  }, [widthContainer, maxWidth])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -48,7 +49,7 @@ export function AgentSelectorNode({ data = {}, selected }: NodeProps) {
       const agentId = await createAgent({
         name,
         taskId: nodeData?.taskId,
-        canvasPosition: nodeData?.canvasPosition || { x: 0, y: 0 },
+        prompt,
       })
       // 2. Create the thread and initial prompt (if provided)
       if (prompt.trim()) {
@@ -64,90 +65,77 @@ export function AgentSelectorNode({ data = {}, selected }: NodeProps) {
     }
   }
 
-  if (!expanded) {
-    return (
-      <BaseNode
-        selected={selected}
-        className="w-[150px] border-gray-400 border-dashed bg-card p-2 text-center text-gray-400 shadow-none mx-auto"
-        onClick={() => setExpanded(true)}
-      >
-        <Plus />
-        <Handle type="target" style={{ visibility: "hidden" }} position={Position.Top} isConnectable={false} />
-        <Handle type="source" style={{ visibility: "hidden" }} position={Position.Bottom} isConnectable={false} />
-      </BaseNode>
-    )
-  }
-
   return (
-    <BaseNode selected={selected} className="w-[320px] p-4">
-      <div className="mb-3">
-        <Label className="mb-1 block font-medium text-xs">Select Existing Agent</Label>
-        <div className="w-full" ref={containerRef}>
-          <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between">
-                {selectedAgentId
-                  ? agentOptions.find((agent) => agent._id === selectedAgentId)?.name
-                  : "Select agent..."}
-                <ChevronsUpDown className="opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[288px] p-0" container={containerRef.current}>
-              <Command>
-                <CommandInput placeholder="Search agents..." disabled={agentsData === undefined} />
-                <CommandList>
-                  <CommandEmpty>No agents found.</CommandEmpty>
-                  {agentOptions.map((agent) => (
-                    <CommandItem
-                      key={agent._id}
-                      value={agent._id}
-                      onSelect={() => setSelectedAgentId(agent._id)}
-                      className={selectedAgentId === agent._id ? "bg-accent" : ""}
-                    >
-                      {agent.name}
-                    </CommandItem>
-                  ))}
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-        </div>
-        {selectedAgentId && selectedAgent && (
-          <div className="mt-2 text-gray-600 text-xs">
-            Selected: {selectedAgent.name} <br />
-            ID: {selectedAgentId}
+    <MotionConfig
+      transition={{
+        bounce: 0.1,
+        duration: 0.25,
+      }}
+    >
+      <NodeStatusIndicator>
+        <BaseNode selected={selected} style={{ "--node-width": "360px" }} className={cn("w-(--node-width) origin-top")}>
+          <div ref={menuRef}>
+            <AsyncSelect<Doc<"agents">>
+              fetcher={async (query) =>
+                await queryAgents({
+                  query: query ?? "",
+                })
+              }
+              getOptionValue={(option) => option._id}
+              getDisplayValue={(option) => option.name}
+              value={selectedAgentId}
+              onChange={(value) => setSelectedAgentId(value)}
+              placeholder="Select agent..."
+              label="Agents"
+              width="326px"
+            />
           </div>
-        )}
-      </div>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <div>
-          <Label className="mb-1 block font-medium text-xs">Agent Name</Label>
-          <Input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Enter agent name"
-            required
-            disabled={loading}
-          />
-        </div>
-        <div>
-          <Label className="mb-1 block font-medium text-xs">Prompt (optional)</Label>
-          <Textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Initial prompt for thread"
-            rows={4}
-            disabled={loading}
-          />
-        </div>
-        <Button type="submit" disabled={loading || !name} className="mt-2 w-full">
-          {loading ? "Creating..." : "Create Agent"}
-        </Button>
-        {error && <div className="mt-1 text-red-500 text-xs">{error}</div>}
-      </form>
-      <Handle type="target" position={Position.Top} style={{ visibility: "hidden" }} isConnectable={false} />
-      <Handle type="source" position={Position.Bottom} style={{ visibility: "hidden" }} isConnectable={false} />
-    </BaseNode>
+
+          <AnimatePresence initial={false} mode="sync">
+            {selectedAgentId ? (
+              <motion.div
+                key="content"
+                initial={{ height: 0 }}
+                animate={{ height: heightContent || 0 }}
+                exit={{ height: 0 }}
+                style={{
+                  width: "var(--node-width)",
+                }}
+              >
+                <div ref={contentRef}>
+                  <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+                    <div>
+                      <Label className="mb-1 inline font-medium text-xs">Agent Name</Label>
+                      <Input
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Enter agent name"
+                        required
+                        disabled={loading}
+                      />
+                    </div>
+                    <div>
+                      <Label className="mb-1 inline font-medium text-xs">Prompt (optional)</Label>
+                      <Textarea
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        placeholder="Initial prompt for thread"
+                        rows={4}
+                        disabled={loading}
+                      />
+                    </div>
+                    <Button type="submit" disabled={loading || !name} className="mt-2 w-full">
+                      {loading ? "Creating..." : "Create Agent"}
+                    </Button>
+                    {error && <div className="mt-1 text-red-500 text-xs">{error}</div>}
+                  </form>
+                </div>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+        </BaseNode>
+      </NodeStatusIndicator>
+    </MotionConfig>
   )
 }
 

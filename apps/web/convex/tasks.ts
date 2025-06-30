@@ -95,6 +95,7 @@ export const updateTask = mutation({
           id: v.string(),
           type: v.string(),
           position: v.object({ x: v.number(), y: v.number() }),
+          data: v.any(),
         }),
       ),
     ),

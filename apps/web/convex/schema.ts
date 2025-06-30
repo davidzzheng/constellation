@@ -39,7 +39,6 @@ const schema = defineSchema({
     isArchived: v.boolean(),
   })
     .index("by_user", ["userId"])
-    .index("by_created", ["_creationTime"])
     .index("by_updated", ["updatedAt"])
     .index("by_archived", ["isArchived"]),
 
@@ -63,9 +62,12 @@ const schema = defineSchema({
     .index("by_user", ["userId"])
     .index("by_task", ["taskId"])
     .index("by_status", ["status"])
-    .index("by_created", ["_creationTime"])
     .index("by_updated", ["updatedAt"])
-    .index("by_archived", ["isArchived"]),
+    .index("by_archived", ["isArchived"])
+    .searchIndex("search_name", {
+      searchField: "name",
+      filterFields: ["userId"],
+    }),
 })
 
 export default schema

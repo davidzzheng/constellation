@@ -1,7 +1,7 @@
 "use client"
 
 import { cva, type VariantProps } from "cva"
-import { ChevronLeft, PanelLeftIcon } from "lucide-react"
+import { ChevronLeft } from "lucide-react"
 import type { Transition } from "motion/react"
 import { Slot } from "radix-ui"
 import * as React from "react"
@@ -83,7 +83,7 @@ function SidebarProvider({
   // Helper to toggle the sidebar.
   const toggleSidebar = React.useCallback(() => {
     return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open)
-  }, [isMobile, setOpen, setOpenMobile])
+  }, [isMobile, setOpen])
 
   // Adds a keyboard shortcut to toggle the sidebar.
   React.useEffect(() => {
@@ -112,7 +112,7 @@ function SidebarProvider({
       setOpenMobile,
       toggleSidebar,
     }),
-    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar],
+    [state, open, setOpen, isMobile, openMobile, toggleSidebar],
   )
 
   return (

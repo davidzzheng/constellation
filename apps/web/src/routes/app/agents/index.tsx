@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { type ColumnDef, flexRender, getCoreRowModel, type SortingState, useReactTable } from "@tanstack/react-table"
 import { fallback, zodValidator } from "@tanstack/zod-adapter"
+import type { Doc } from "convex/_generated/dataModel"
 import { Plus } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
@@ -13,14 +14,14 @@ import { api } from "~/api"
 import { Button } from "~/components/ui/button"
 import { Checkbox } from "~/components/ui/checkbox"
 import {
-  DialogTrigger,
+  Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  Dialog,
+  DialogTrigger,
 } from "~/components/ui/dialog"
-import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage, Form } from "~/components/ui/form"
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "~/components/ui/form"
 import { Input } from "~/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table"
 import { Textarea } from "~/components/ui/textarea"
@@ -39,10 +40,10 @@ export const Route = createFileRoute("/app/agents/")({
 
 const createAgentSchema = z.object({
   name: z.string().min(1),
-  description: z.string().optional(),
+  prompt: z.string(),
 })
 
-const columns: ColumnDef<any>[] = [
+const columns: ColumnDef<Doc<"agents">>[] = [
   {
     id: "select",
     header: ({ table }) => (
@@ -75,7 +76,7 @@ const columns: ColumnDef<any>[] = [
     enableColumnFilter: true,
   },
   {
-    accessorKey: "createdAt",
+    accessorKey: "_creationTime",
     header: "Created At",
     enableSorting: true,
     enableColumnFilter: true,
@@ -192,14 +193,14 @@ function AgentsDashboard() {
                   />
                   <FormField
                     control={form.control}
-                    name="description"
+                    name="prompt"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Description</FormLabel>
+                        <FormLabel>Prompt</FormLabel>
                         <FormControl>
                           <Textarea {...field} rows={4} />
                         </FormControl>
-                        <FormDescription>A description of the agent.</FormDescription>
+                        <FormDescription>A system prompt of the agent.</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}

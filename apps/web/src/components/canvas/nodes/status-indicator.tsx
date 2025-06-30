@@ -56,7 +56,7 @@ export const NodeStatusIndicator = ({ status, children }: NodeStatusIndicatorPro
     case "processing":
       return <LoadingIndicator>{children}</LoadingIndicator>
     case "success":
-      return <StatusBorder className="border-emerald-600">{children}</StatusBorder>
+      return <StatusBorder className="border-emerald-400">{children}</StatusBorder>
     case "error":
       return <StatusBorder className="border-red-400">{children}</StatusBorder>
     default:

@@ -3,6 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { type ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table"
+import type { Doc } from "convex/_generated/dataModel"
 import { Plus } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
@@ -35,15 +36,7 @@ const createTaskSchema = z.object({
   description: z.string().optional(),
 })
 
-type Task = {
-  _id: string
-  title: string
-  description?: string
-  createdAt: number
-  updatedAt: number
-}
-
-const columns: ColumnDef<Task>[] = [
+const columns: ColumnDef<Doc<"tasks">>[] = [
   {
     id: "select",
     header: ({ table }) => (

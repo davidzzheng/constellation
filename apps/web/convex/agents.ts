@@ -1,10 +1,11 @@
-import { Agent } from "@convex-dev/agent"
+import { Agent, createTool } from "@convex-dev/agent"
 import { createOpenRouter } from "@openrouter/ai-sdk-provider"
 import { paginationOptsValidator } from "convex/server"
 import { v } from "convex/values"
 import { getPage } from "convex-helpers/server/pagination"
 import { createOllama } from "ollama-ai-provider"
-import { components } from "./_generated/api"
+import { z } from "zod"
+import { api, components } from "./_generated/api"
 import { action, mutation, query } from "./_generated/server"
 import { betterAuthComponent } from "./auth"
 import schema from "./schema"
@@ -19,10 +20,13 @@ const superAgent = new Agent(components.agent, {
   chat: openrouter.chat("deepseek/deepseek-r1-0528-qwen3-8b:free"),
   textEmbedding: ollama.embedding("bge-m3"),
   instructions:
-    "You are an assistant that helps create and manage tasks, which consists of coordinating other agents. " +
-    "You can search, create, and merge agents. " +
-    "Be willing to undo mistakes and get better. When in doubt, merge agents. " +
+    "You are an assistant that can create, manage, and coordinate other agents. " +
+    "You can search for agents that can complete a certain task, or create new ones if none fit the task. " +
+    "Split up tasks so that the created agents can be iterated upon and reused for future tasks. " +
+    "Over time you should take feedback on how to categorize and optimize tasks by merging them. " +
+    "Be willing to undo mistakes and get better. When in doubt, create a single agent to handle the task. " +
     "When passing IDs, you MUST pass a real ID verbatim. " +
+    "agentId is for the reusable agent, and taskId is for tasks, and threadId is for the thread that is used within a task. " +
     "If you don't have an ID, search for one first.",
   contextOptions: {
     recentMessages: 20,
@@ -30,6 +34,24 @@ const superAgent = new Agent(components.agent, {
     excludeToolMessages: false,
   },
   maxSteps: 10,
+})
+
+const taskTriageAgent = new Agent(components.agent, {
+  chat: openrouter.chat("deepseek/deepseek-r1-0528-qwen3-8b:free"),
+  textEmbedding: ollama.embedding("bge-m3"),
+  instructions:
+    "You are an assistant that can create, manage, and coordinate other agents. " +
+    "You can search for agents that can complete a certain task, or create new ones if none fit the task. " +
+    "Split up tasks so that the created agents can be iterated upon and reused for future tasks. " +
+    "Over time you should take feedback on how to categorize and optimize tasks by merging them. " +
+    "Be willing to undo mistakes and get better. When in doubt, create a single agent to handle the task. " +
+    "When passing IDs, you MUST pass a real ID verbatim. " +
+    "agentId is for the reusable agent, and taskId is for tasks, and threadId is for the thread that is used within a task. " +
+    "If you don't have an ID, search for one first.",
+  contextOptions: {
+    recentMessages: 20,
+    searchOtherThreads: true,
+  },
 })
 
 export const createThreadAndPrompt = action({
@@ -91,7 +113,6 @@ export const getAgentsPage = query({
       v.literal("by_user"),
       v.literal("by_task"),
       v.literal("by_status"),
-      v.literal("by_created"),
       v.literal("by_updated"),
       v.literal("by_archived"),
     ),
@@ -105,9 +126,9 @@ export const getAgentsPage = query({
 export const createAgent = mutation({
   args: {
     name: v.string(),
+    prompt: v.string(),
     taskId: v.optional(v.id("tasks")),
     connections: v.optional(v.array(v.string())),
-    canvasPosition: v.object({ x: v.number(), y: v.number() }),
   },
   handler: async (ctx, args) => {
     const userId = await betterAuthComponent.getAuthUserId(ctx)
@@ -173,5 +194,19 @@ export const deleteAgent = mutation({
     if (!agent || agent.userId !== userId) throw new Error("Not found or unauthorized")
     await ctx.db.delete(args.agentId)
     return true
+  },
+})
+
+export const queryAgents = mutation({
+  args: { query: v.string() },
+  handler: async (ctx, args) => {
+    const userId = await betterAuthComponent.getAuthUserId(ctx)
+    if (!userId) throw new Error("Not authenticated")
+
+    console.log(userId, args)
+    return await ctx.db
+      .query("agents")
+      .withSearchIndex("search_name", (q) => q.search("name", args.query).eq("userId", userId))
+      .take(10)
   },
 })
