@@ -74,21 +74,24 @@ export function AgentSelectorNode({ data = {}, selected }: NodeProps) {
     >
       <NodeStatusIndicator>
         <BaseNode selected={selected} style={{ "--node-width": "360px" }} className={cn("w-(--node-width) origin-top")}>
-          <div ref={menuRef}>
-            <AsyncSelect<Doc<"agents">>
-              fetcher={async (query) =>
-                await queryAgents({
-                  query: query ?? "",
-                })
-              }
-              getOptionValue={(option) => option._id}
-              getDisplayValue={(option) => option.name}
-              value={selectedAgentId}
-              onChange={(value) => setSelectedAgentId(value)}
-              placeholder="Select agent..."
-              label="Agents"
-              width="326px"
-            />
+          <div className="flex flex-col gap-y-2">
+            <p>Agent Selector</p>
+            <div ref={menuRef}>
+              <AsyncSelect<Doc<"agents">>
+                fetcher={async (query) =>
+                  await queryAgents({
+                    query: query ?? "",
+                  })
+                }
+                getOptionValue={(option) => option._id}
+                getDisplayValue={(option) => option.name}
+                value={selectedAgentId}
+                onChange={(value) => setSelectedAgentId(value)}
+                placeholder="Select agent..."
+                label="Agents"
+                width="326px"
+              />
+            </div>
           </div>
 
           <AnimatePresence initial={false} mode="sync">
