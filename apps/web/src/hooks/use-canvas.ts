@@ -1,20 +1,20 @@
 import { convexQuery } from "@convex-dev/react-query"
 import { useSuspenseQuery } from "@tanstack/react-query"
-import type { Edge, EdgeChange, NodeChange, Viewport } from "@xyflow/react"
+import { type Edge, type EdgeChange, type Node, type NodeChange, useReactFlow, type Viewport } from "@xyflow/react"
 import type { Id } from "convex/_generated/dataModel"
 import { useMutation } from "convex/react"
-import { useCallback } from "react"
+import { useCallback, useId } from "react"
 import { api } from "~/api"
 
 export const useCanvas = (taskId: string) => {
   const { data } = useSuspenseQuery(convexQuery(api.tasks.getTask, { taskId: taskId as Id<"tasks"> }))
+  const { addNodes } = useReactFlow()
 
   const updateNodes = useMutation(api.tasks.updateTask).withOptimisticUpdate((local, args) => {
     const curr = local.getQuery(api.tasks.getTask, {
       taskId: taskId as Id<"tasks">,
     })
     const { nodes } = args
-
     if (curr !== undefined && nodes !== undefined) {
       local.setQuery(
         api.tasks.getTask,
@@ -32,7 +32,6 @@ export const useCanvas = (taskId: string) => {
       taskId: taskId as Id<"tasks">,
     })
     const { edges } = args
-
     if (curr !== undefined && edges !== undefined) {
       local.setQuery(
         api.tasks.getTask,
@@ -50,7 +49,6 @@ export const useCanvas = (taskId: string) => {
       taskId: taskId as Id<"tasks">,
     })
     const { viewport } = args
-
     if (curr !== undefined && viewport !== undefined) {
       local.setQuery(
         api.tasks.getTask,
@@ -66,86 +64,92 @@ export const useCanvas = (taskId: string) => {
   const handleNodesChange = useCallback(
     async (changes: NodeChange[]) => {
       if (!data) return
-      changes.forEach(async (change) => {
+      let updatedNodes = data.nodes ? [...data.nodes] : []
+      let changed = false
+      for (const change of changes) {
         switch (change.type) {
-          case "position":
-            if (!change.dragging) {
-              const node = data.nodes?.find((n) => n.id === change.id)
-              if (node) {
-                await updateNodes({
-                  taskId: taskId as Id<"tasks">,
-                  nodes: data.nodes?.map((n) => ({
-                    id: n.id,
-                    type: n.type,
-                    position: n.position,
-                    data: n.data,
-                  })),
-                })
+          case "position": {
+            const idx = updatedNodes.findIndex((n) => n.id === change.id)
+            if (idx !== -1) {
+              updatedNodes[idx] = {
+                ...updatedNodes[idx],
+                position: change.position ?? updatedNodes[idx].position,
               }
-            }
-            break
-          case "add": {
-            const node = change.item
-            if (node) {
-              await updateNodes({
-                taskId: taskId as Id<"tasks">,
-                nodes: data.nodes?.map((n) => ({
-                  id: n.id,
-                  type: n.type,
-                  position: n.position,
-                  data: n.data,
-                })),
-              })
+              changed = true
             }
             break
           }
-          case "remove":
-            await updateNodes({
-              taskId: taskId as Id<"tasks">,
-              nodes: data.nodes?.filter((n) => n.id !== change.id),
-            })
+          case "add": {
+            if (change.item) {
+              const node = change.item as Node<{
+                id: string
+                type: string
+                position: { x: number; y: number }
+                data: any
+              }>
+              updatedNodes.push({
+                id: node.id,
+                type: node.type ?? "default",
+                position: node.position,
+                data: node.data,
+              })
+              changed = true
+            }
             break
+          }
+          case "remove": {
+            updatedNodes = updatedNodes.filter((n) => n.id !== change.id)
+            changed = true
+            break
+          }
         }
-      })
+      }
+      if (changed) {
+        await updateNodes({
+          taskId: taskId as Id<"tasks">,
+          nodes: updatedNodes,
+        })
+      }
     },
     [data, updateNodes, taskId],
   )
 
   const handleEdgesChange = useCallback(
-    async (edges: EdgeChange[]) => {
+    async (changes: EdgeChange[]) => {
       if (!data) return
-      edges.forEach(async (e) => {
-        let updatedEdges: Edge[] = []
-
-        switch (e.type) {
+      let updatedEdges = data.edges ? [...data.edges] : []
+      let changed = false
+      for (const change of changes) {
+        switch (change.type) {
           case "add": {
-            const edge = e.item
-            if (edge) {
-              updatedEdges = data.edges?.map((edge) => {
-                if (edge.id === e.item.id) {
-                  return {
-                    id: e.item.id,
-                    source: e.item.source,
-                    target: e.item.target,
-                  }
-                }
-                return edge
-              })
+            if (change.item) {
+              const edge = change.item as Edge
+              if (!updatedEdges.some((e) => e.id === edge.id)) {
+                updatedEdges.push({
+                  id: edge.id,
+                  source: edge.source,
+                  target: edge.target,
+                  sourceHandle: (edge as any).sourceHandle,
+                  targetHandle: (edge as any).targetHandle,
+                })
+                changed = true
+              }
             }
             break
           }
           case "remove": {
-            updatedEdges = data.edges?.filter((edge) => edge.id !== e.id)
-
+            updatedEdges = updatedEdges.filter((e) => e.id !== change.id)
+            changed = true
             break
           }
         }
-
+      }
+      if (changed) {
         await updateEdges({
           taskId: taskId as Id<"tasks">,
           edges: updatedEdges,
         })
-      })
+      }
     },
     [data, updateEdges, taskId],
   )
@@ -160,8 +164,23 @@ export const useCanvas = (taskId: string) => {
     [updateViewport, taskId],
   )
 
+  const id = useId()
+  const addNode = (type: string, data: Record<string, unknown>) => {
+    addNodes([
+      {
+        id,
+        type,
+        position: { x: 0, y: 0 },
+        data,
+      },
+    ])
+  }
+
   return {
-    ...data,
+    nodes: data?.nodes ?? [],
+    edges: data?.edges ?? [],
+    viewport: data?.viewport,
+    addNode,
     handleNodesChange,
     handleEdgesChange,
     handleViewportChange,

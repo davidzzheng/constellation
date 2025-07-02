@@ -13,12 +13,7 @@ export const NodeHeader = forwardRef<HTMLElement, NodeHeaderProps>(({ className,
     <header
       ref={ref}
       {...props}
-      className={cn(
-        "flex items-center justify-between gap-2 px-3 py-2",
-        // Remove or modify these classes if you modify the padding in the
-        // `<BaseNode />` component.
-        className,
-      )}
+      className={cn("-mx-3 -mt-2 mb-2 flex items-center justify-between gap-2 border-b px-3 pt-1 pb-3", className)}
     />
   )
 })

@@ -6,6 +6,19 @@ const schema = defineSchema({
     email: v.string(),
   }).index("email", ["email"]),
 
+  presence: defineTable({
+    userId: v.id("users"),
+    taskId: v.id("tasks"),
+    lastUpdated: v.number(),
+    cursorPosition: v.object({
+      x: v.number(),
+      y: v.number(),
+    }),
+  })
+    .index("by_task", ["taskId"])
+    .index("by_user_and_task", ["userId", "taskId"])
+    .index("by_task_and_lastUpdated", ["taskId", "lastUpdated"]),
+
   tasks: defineTable({
     userId: v.string(),
     title: v.string(),

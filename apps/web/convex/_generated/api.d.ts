@@ -10,7 +10,6 @@
 
 import type * as agents from "../agents.js";
 import type * as auth from "../auth.js";
-import type * as canvas from "../canvas.js";
 import type * as chat from "../chat.js";
 import type * as email from "../email.js";
 import type * as emails_components_BaseEmail from "../emails/components/BaseEmail.js";
@@ -42,7 +41,6 @@ import type {
 declare const fullApi: ApiFromModules<{
   agents: typeof agents;
   auth: typeof auth;
-  canvas: typeof canvas;
   chat: typeof chat;
   email: typeof email;
   "emails/components/BaseEmail": typeof emails_components_BaseEmail;

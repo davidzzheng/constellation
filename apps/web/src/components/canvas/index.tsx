@@ -1,5 +1,5 @@
 import { Background, type ColorMode, MiniMap, ReactFlow } from "@xyflow/react"
-import { Suspense } from "react"
+import { Suspense, useEffect } from "react"
 import { useTheme } from "~/components/providers/theme"
 import { useCanvas } from "~/hooks/use-canvas"
 import { Skeleton } from "../ui/skeleton"
@@ -40,7 +40,13 @@ type TaskCanvasProps = {
 
 export function TaskCanvas({ taskId }: TaskCanvasProps) {
   const { theme } = useTheme()
-  const { edges, nodes, handleEdgesChange, handleNodesChange, handleViewportChange } = useCanvas(taskId)
+  const { edges, nodes, handleEdgesChange, handleNodesChange, handleViewportChange, addNode } = useCanvas(taskId)
+
+  useEffect(() => {
+    if (nodes.length === 0) {
+      addNode("agentSelectorNode", {})
+    }
+  }, [nodes])
 
   return (
     <div className="absolute top-0 left-0 size-full">
@@ -48,7 +54,7 @@ export function TaskCanvas({ taskId }: TaskCanvasProps) {
         <ReactFlow
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
-          nodes={nodes?.length > 0 ? nodes : defaultNodes}
+          nodes={nodes}
           edges={edges}
           onNodesChange={handleNodesChange}
           onEdgesChange={handleEdgesChange}
