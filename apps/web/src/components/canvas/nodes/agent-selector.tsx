@@ -1,6 +1,6 @@
 import type { NodeProps } from "@xyflow/react"
 import type { Id } from "convex/_generated/dataModel"
-import { useAction, useMutation } from "convex/react"
+import { useAction, useMutation, useQuery } from "convex/react"
 import { Bot } from "lucide-react"
 import { AnimatePresence, MotionConfig, motion } from "motion/react"
 import { useEffect, useState } from "react"
@@ -29,11 +29,17 @@ export type AgentCreatorNodeData = {
   taskId?: Id<"tasks">
 }
 
+// Define Agent type for combobox
+interface AgentOption {
+  value: string // agent id or slug
+  label: string // agent name
+  isNew?: boolean
+}
+
 export function AgentSelectorNode({ data = {}, selected }: NodeProps) {
   const nodeData = data as AgentCreatorNodeData
 
   const [loading, setLoading] = useState(false)
-  const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const createAgent = useMutation(api.agents.createAgent)
   const createThreadAndPrompt = useAction(api.agents.createThreadAndPrompt)
@@ -41,26 +47,51 @@ export function AgentSelectorNode({ data = {}, selected }: NodeProps) {
   const [menuRef, { width: widthContainer }] = useMeasure()
   const [maxWidth, setMaxWidth] = useState(0)
 
-  const [frameworks, setFrameworks] = useState([])
-  const [value, setValue] = useState("")
+  const [agentOptions, setAgentOptions] = useState<AgentOption[]>([])
+  const [value, setValue] = useState<string>("")
   const [prompt, setPrompt] = useState("")
-  const handleCreateNew = (newValue: string) => {
-    console.log("Creating new framework:", newValue)
+  const [isNewAgent, setIsNewAgent] = useState(false)
 
-    const newFramework = {
-      value: newValue.toLowerCase().replace(/\s+/g, "-"),
-      label: newValue,
+  const agents = useQuery(api.agents.getMostRecentAgents, { limit: 10 })
+
+  useEffect(() => {
+    if (agents) {
+      setAgentOptions(
+        agents.map((agent) => ({
+          value: agent._id,
+          label: agent.name,
+        })),
+      )
     }
+  }, [agents])
 
-    setFrameworks((prev) => [...prev, newFramework])
-    setValue(newFramework.value)
+  const handleValueChange = (newValue: string) => {
+    setValue(newValue)
+    setError(null)
+    const found = agentOptions.find((a) => a.value === newValue)
+    if (found) {
+      setIsNewAgent(false)
+      setPrompt("") // No prompt stored for existing agent
+    } else {
+      setIsNewAgent(true)
+      setPrompt("")
+    }
   }
 
-  const queryAgents = useMutation(api.agents.queryAgents)
+  const handleCreateNew = (newValue: string) => {
+    const slug = newValue.toLowerCase().replace(/\s+/g, "-")
+    const newAgent: AgentOption = {
+      value: slug,
+      label: newValue,
+      isNew: true,
+    }
+    setAgentOptions((prev) => [...prev, newAgent])
+    setValue(slug)
+    setIsNewAgent(true)
+  }
 
   useEffect(() => {
     if (!widthContainer || maxWidth > 0) return
-
     setMaxWidth(widthContainer)
   }, [widthContainer, maxWidth])
 
@@ -69,16 +100,25 @@ export function AgentSelectorNode({ data = {}, selected }: NodeProps) {
     setLoading(true)
     setError(null)
     try {
-      const agentId = await createAgent({
-        name: value,
-        taskId: nodeData?.taskId,
-        prompt,
-      })
-      if (prompt.trim()) {
-        await createThreadAndPrompt({ prompt })
+      if (isNewAgent) {
+        if (!prompt.trim()) {
+          setError("Prompt is required for new agents.")
+          setLoading(false)
+          return
+        }
+        const agentId = await createAgent({
+          name: value,
+          taskId: nodeData?.taskId,
+          prompt,
+        })
+        setAgentOptions((prev) => prev.filter((a) => !a.isNew))
+        setValue(agentId)
+        setIsNewAgent(false)
+        setPrompt("")
+        // Optionally, show a success message or update the node state here
+      } else {
+        // Existing agent selected, do nothing or trigger callback
       }
-      setPrompt("")
-      // Optionally, show a success message or update the node state here
     } catch (err: any) {
       setError(err?.message || "Failed to create agent.")
     } finally {
@@ -87,12 +127,7 @@ export function AgentSelectorNode({ data = {}, selected }: NodeProps) {
   }
 
   return (
-    <MotionConfig
-      transition={{
-        bounce: 0.1,
-        duration: 0.25,
-      }}
-    >
+    <MotionConfig transition={{ bounce: 0.1, duration: 0.25 }}>
       <NodeStatusIndicator>
         <BaseNode selected={selected} style={{ "--node-width": "360px" }} className={cn("w-(--node-width) origin-top")}>
           <div className="flex flex-col gap-y-1" ref={menuRef}>
@@ -102,20 +137,12 @@ export function AgentSelectorNode({ data = {}, selected }: NodeProps) {
               </NodeHeaderIcon>
               <NodeHeaderTitle>Agent Selector</NodeHeaderTitle>
               <NodeHeaderActions>
-                {/* <NodeHeaderMenuAction label="Expand account options"> */}
-                {/*   <DropdownMenuLabel>My Account</DropdownMenuLabel> */}
-                {/*   <DropdownMenuSeparator /> */}
-                {/*   <DropdownMenuItem>Profile</DropdownMenuItem> */}
-                {/*   <DropdownMenuItem>Billing</DropdownMenuItem> */}
-                {/*   <DropdownMenuItem>Team</DropdownMenuItem> */}
-                {/*   <DropdownMenuItem>Subscription</DropdownMenuItem> */}
-                {/* </NodeHeaderMenuAction> */}
                 <NodeHeaderDeleteAction />
               </NodeHeaderActions>
             </NodeHeader>
             <div>
               <Label className="mb-1 inline font-medium text-xs">Agent Name</Label>
-              <Combobox data={frameworks} onValueChange={setValue} type="agents" value={value}>
+              <Combobox data={agentOptions} onValueChange={handleValueChange} type="agents" value={value}>
                 <ComboboxTrigger className="w-full" />
                 <ComboboxContent>
                   <ComboboxInput />
@@ -124,9 +151,9 @@ export function AgentSelectorNode({ data = {}, selected }: NodeProps) {
                   </ComboboxEmpty>
                   <ComboboxList>
                     <ComboboxGroup>
-                      {frameworks.map((framework) => (
-                        <ComboboxItem key={framework.value} value={framework.value}>
-                          {framework.label}
+                      {agentOptions.map((agent) => (
+                        <ComboboxItem key={agent.value} value={agent.value}>
+                          {agent.label}
                         </ComboboxItem>
                       ))}
                     </ComboboxGroup>
@@ -142,23 +169,33 @@ export function AgentSelectorNode({ data = {}, selected }: NodeProps) {
                 className="my-4"
                 key="content"
                 initial={{ height: 0 }}
-                animate={{ height: heightContent || 0 }}
+                animate={{ height: heightContent ?? 0 }}
                 exit={{ height: 0 }}
               >
-                <div ref={contentRef}>
+                <div ref={contentRef} className="h-fit">
                   <form onSubmit={handleSubmit} className="flex flex-col gap-3">
                     <div>
                       <Label className="mb-1 inline font-medium text-xs">Prompt</Label>
                       <Textarea
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
-                        placeholder="Initial prompt for agent"
+                        placeholder={isNewAgent ? "Initial prompt for agent" : "No prompt stored for this agent"}
                         rows={4}
-                        disabled={loading}
+                        disabled={loading || !isNewAgent}
                       />
                     </div>
-                    <Button type="submit" disabled={loading || !value} className="mt-2 w-full">
-                      {loading ? "Creating..." : "Create Agent"}
+                    <Button
+                      type="submit"
+                      disabled={loading || !value || (isNewAgent && !prompt.trim())}
+                      className="mt-2 w-full"
+                    >
+                      {loading
+                        ? isNewAgent
+                          ? "Creating..."
+                          : "Selecting..."
+                        : isNewAgent
+                          ? "Create Agent"
+                          : "Select Agent"}
                     </Button>
                     {error && <div className="mt-1 text-red-500 text-xs">{error}</div>}
                   </form>

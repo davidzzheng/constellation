@@ -1,7 +1,7 @@
 "use client"
 
 import { useControllableState } from "@radix-ui/react-use-controllable-state"
-import { ChevronsUpDownIcon, PlusIcon } from "lucide-react"
+import { ChevronDown, ChevronsUpDownIcon, PlusIcon } from "lucide-react"
 import { type ComponentProps, createContext, type ReactNode, useContext, useEffect, useRef, useState } from "react"
 import { Button } from "~/components/ui/button"
 import {
@@ -109,7 +109,7 @@ export const Combobox = ({
 
 export type ComboboxTriggerProps = ComponentProps<typeof Button>
 
-export const ComboboxTrigger = ({ children, ...props }: ComboboxTriggerProps) => {
+export const ComboboxTrigger = ({ children, className, ...props }: ComboboxTriggerProps) => {
   const { value, data, type, setWidth } = useContext(ComboboxContext)
   const ref = useRef<HTMLButtonElement>(null)
 
@@ -134,11 +134,14 @@ export const ComboboxTrigger = ({ children, ...props }: ComboboxTriggerProps) =>
 
   return (
     <PopoverTrigger asChild>
-      <Button variant="outline" {...props} ref={ref}>
+      <Button variant="outline" className={cn("group/combobox-trigger", className)} {...props} ref={ref}>
         {children ?? (
           <span className="flex w-full items-center justify-between gap-2">
             {value ? data.find((item) => item.value === value)?.label : `Select ${type}...`}
-            <ChevronsUpDownIcon className="shrink-0 text-muted-foreground" size={16} />
+            <ChevronDown
+              className="shrink-0 text-muted-foreground transition-transform group-aria-expanded/combobox-trigger:rotate-180"
+              size={16}
+            />
           </span>
         )}
       </Button>

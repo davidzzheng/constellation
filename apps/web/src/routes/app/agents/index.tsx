@@ -92,7 +92,7 @@ const columns: ColumnDef<Doc<"agents">>[] = [
     enableHiding: false,
     cell: ({ row }) => (
       <Button variant="link" asChild>
-        <Link className="px-2!" to="/app/tasks/$id" params={{ id: row.original._id }}>
+        <Link className="px-2!" to="/app/agents/$agentId" params={{ agentId: row.original._id }}>
           View
         </Link>
       </Button>

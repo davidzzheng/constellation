@@ -4,6 +4,7 @@ import { convexQuery } from "@convex-dev/react-query"
 import { useQueries } from "@tanstack/react-query"
 import { isMatch, Link, useLocation, useMatches } from "@tanstack/react-router"
 import { Bot, ChevronRight, Home, Plus, SquareTerminal } from "lucide-react"
+import { useState } from "react"
 import { api } from "~/api"
 import {
   SidebarGroup,
@@ -21,6 +22,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/colla
 export function NavMain() {
   const { pathname } = useLocation()
   const matches = useMatches()
+  const [tasksOpen, setTasksOpen] = useState(pathname.includes("/app/tasks"))
+  const [agentsOpen, setAgentsOpen] = useState(pathname.includes("/app/agents"))
 
   const [{ data: agents = [] }, { data: tasks = [] }] = useQueries({
     queries: [convexQuery(api.agents.getMostRecentAgents, {}), convexQuery(api.tasks.getMostRecentTasks, {})],
@@ -52,7 +55,7 @@ export function NavMain() {
         </SidebarMenuItem>
 
         {tasks.length > 0 ? (
-          <Collapsible asChild defaultOpen={pathname === "/app/tasks"} className="group/collapsible">
+          <Collapsible asChild open={tasksOpen} onOpenChange={setTasksOpen} className="group/collapsible">
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip="Tasks" isActive={pathname === "/app/tasks"} className="w-full">
                 <Link to="/app/tasks">
@@ -93,7 +96,7 @@ export function NavMain() {
         )}
 
         {agents.length > 0 ? (
-          <Collapsible asChild defaultOpen={pathname === "/app/agents"} className="group/collapsible">
+          <Collapsible asChild open={agentsOpen} onOpenChange={setAgentsOpen} className="group/collapsible">
             <SidebarMenuItem>
               <CollapsibleTrigger asChild>
                 <SidebarMenuButton tooltip="Agents" isActive={pathname === "/app/agents"} className="w-full">

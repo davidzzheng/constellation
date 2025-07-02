@@ -59,6 +59,7 @@ const schema = defineSchema({
     userId: v.string(),
     taskId: v.optional(v.id("tasks")),
     name: v.string(),
+    prompt: v.optional(v.string()),
     connections: v.array(v.string()),
     chatHistory: v.array(
       v.object({

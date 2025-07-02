@@ -1,11 +1,10 @@
-import { Agent, createTool } from "@convex-dev/agent"
+import { Agent } from "@convex-dev/agent"
 import { createOpenRouter } from "@openrouter/ai-sdk-provider"
 import { paginationOptsValidator } from "convex/server"
 import { v } from "convex/values"
 import { getPage } from "convex-helpers/server/pagination"
 import { createOllama } from "ollama-ai-provider"
-import { z } from "zod"
-import { api, components } from "./_generated/api"
+import { components } from "./_generated/api"
 import { action, mutation, query } from "./_generated/server"
 import { betterAuthComponent } from "./auth"
 import schema from "./schema"
@@ -34,24 +33,6 @@ const superAgent = new Agent(components.agent, {
     excludeToolMessages: false,
   },
   maxSteps: 10,
-})
-
-const taskTriageAgent = new Agent(components.agent, {
-  chat: openrouter.chat("deepseek/deepseek-r1-0528-qwen3-8b:free"),
-  textEmbedding: ollama.embedding("bge-m3"),
-  instructions:
-    "You are an assistant that can create, manage, and coordinate other agents. " +
-    "You can search for agents that can complete a certain task, or create new ones if none fit the task. " +
-    "Split up tasks so that the created agents can be iterated upon and reused for future tasks. " +
-    "Over time you should take feedback on how to categorize and optimize tasks by merging them. " +
-    "Be willing to undo mistakes and get better. When in doubt, create a single agent to handle the task. " +
-    "When passing IDs, you MUST pass a real ID verbatim. " +
-    "agentId is for the reusable agent, and taskId is for tasks, and threadId is for the thread that is used within a task. " +
-    "If you don't have an ID, search for one first.",
-  contextOptions: {
-    recentMessages: 20,
-    searchOtherThreads: true,
-  },
 })
 
 export const createThreadAndPrompt = action({
@@ -138,6 +119,7 @@ export const createAgent = mutation({
       userId,
       name: args.name,
       taskId: args.taskId,
+      prompt: args.prompt,
       connections: args.connections ?? [],
       chatHistory: [],
       status: "idle",
