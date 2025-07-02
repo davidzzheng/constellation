@@ -28,10 +28,11 @@ type ComboboxContextType = {
   onValueChange: (value: string) => void
   open: boolean
   onOpenChange: (open: boolean) => void
-  width: number
-  setWidth: (width: number) => void
+  width: number | string
+  setWidth: (width: number | string) => void
   inputValue: string
   setInputValue: (value: string) => void
+  containerRef?: React.RefObject<HTMLDivElement | undefined>
 }
 
 const ComboboxContext = createContext<ComboboxContextType>({
@@ -41,10 +42,11 @@ const ComboboxContext = createContext<ComboboxContextType>({
   onValueChange: () => {},
   open: false,
   onOpenChange: () => {},
-  width: 200,
+  width: "100%",
   setWidth: () => {},
   inputValue: "",
   setInputValue: () => {},
+  containerRef: undefined,
 })
 
 export type ComboboxProps = ComponentProps<typeof Popover> & {
@@ -78,7 +80,8 @@ export const Combobox = ({
     prop: controlledOpen,
     onChange: controlledOnOpenChange,
   })
-  const [width, setWidth] = useState(200)
+  const [width, setWidth] = useState<number | string>("100%")
+  const containerRef = useRef<HTMLDivElement>(undefined)
   const [inputValue, setInputValue] = useState("")
 
   return (
@@ -94,9 +97,12 @@ export const Combobox = ({
         setWidth,
         inputValue,
         setInputValue,
+        containerRef,
       }}
     >
-      <Popover {...props} onOpenChange={onOpenChange} open={open} />
+      <div ref={containerRef}>
+        <Popover {...props} onOpenChange={onOpenChange} open={open} />
+      </div>
     </ComboboxContext.Provider>
   )
 }
@@ -108,7 +114,6 @@ export const ComboboxTrigger = ({ children, ...props }: ComboboxTriggerProps) =>
   const ref = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
-    // Create a ResizeObserver to detect width changes
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const newWidth = (entry.target as HTMLElement).offsetWidth
@@ -122,7 +127,6 @@ export const ComboboxTrigger = ({ children, ...props }: ComboboxTriggerProps) =>
       resizeObserver.observe(ref.current)
     }
 
-    // Clean up the observer when component unmounts
     return () => {
       resizeObserver.disconnect()
     }
@@ -147,10 +151,15 @@ export type ComboboxContentProps = ComponentProps<typeof Command> & {
 }
 
 export const ComboboxContent = ({ className, popoverOptions, ...props }: ComboboxContentProps) => {
-  const { width } = useContext(ComboboxContext)
+  const { width, containerRef } = useContext(ComboboxContext)
 
   return (
-    <PopoverContent className={cn("p-0", className)} style={{ width }} {...popoverOptions}>
+    <PopoverContent
+      className={cn("p-0", className)}
+      style={{ width }}
+      container={containerRef?.current}
+      {...popoverOptions}
+    >
       <Command {...props} />
     </PopoverContent>
   )
@@ -174,9 +183,7 @@ export const ComboboxInput = ({
     defaultProp: defaultValue ?? inputValue,
     prop: controlledValue,
     onChange: (newValue) => {
-      // Sync with context state
       setInputValue(newValue)
-      // Call external onChange if provided
       controlledOnValueChange?.(newValue)
     },
   })

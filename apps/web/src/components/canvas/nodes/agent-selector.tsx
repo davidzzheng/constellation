@@ -13,6 +13,17 @@ import { Textarea } from "~/components/ui/textarea"
 import { cn } from "~/lib/utils"
 import { BaseNode } from "./base"
 import { NodeStatusIndicator } from "./status-indicator"
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxCreateNew,
+  ComboboxEmpty,
+  ComboboxGroup,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxTrigger,
+} from "~/components/ui/combobox"
 
 export type AgentCreatorNodeData = {
   taskId?: Id<"tasks">
@@ -31,6 +42,20 @@ export function AgentSelectorNode({ data = {}, selected }: NodeProps) {
   const [contentRef, { height: heightContent }] = useMeasure()
   const [menuRef, { width: widthContainer }] = useMeasure()
   const [maxWidth, setMaxWidth] = useState(0)
+
+  const [frameworks, setFrameworks] = useState([])
+  const [value, setValue] = useState("")
+  const handleCreateNew = (newValue: string) => {
+    console.log("Creating new framework:", newValue)
+
+    const newFramework = {
+      value: newValue.toLowerCase().replace(/\s+/g, "-"),
+      label: newValue,
+    }
+
+    setFrameworks((prev) => [...prev, newFramework])
+    setValue(newFramework.value)
+  }
 
   const queryAgents = useMutation(api.agents.queryAgents)
 
@@ -74,24 +99,26 @@ export function AgentSelectorNode({ data = {}, selected }: NodeProps) {
     >
       <NodeStatusIndicator>
         <BaseNode selected={selected} style={{ "--node-width": "360px" }} className={cn("w-(--node-width) origin-top")}>
-          <div className="flex flex-col gap-y-2">
+          <div className="flex flex-col gap-y-2" ref={menuRef}>
             <p>Agent Selector</p>
-            <div ref={menuRef}>
-              <AsyncSelect<Doc<"agents">>
-                fetcher={async (query) =>
-                  await queryAgents({
-                    query: query ?? "",
-                  })
-                }
-                getOptionValue={(option) => option._id}
-                getDisplayValue={(option) => option.name}
-                value={selectedAgentId}
-                onChange={(value) => setSelectedAgentId(value)}
-                placeholder="Select agent..."
-                label="Agents"
-                width="326px"
-              />
-            </div>
+            <Combobox data={frameworks} onValueChange={setValue} type="agents" value={value}>
+              <ComboboxTrigger className="w-full" />
+              <ComboboxContent>
+                <ComboboxInput />
+                <ComboboxEmpty>
+                  <ComboboxCreateNew onCreateNew={handleCreateNew} />
+                </ComboboxEmpty>
+                <ComboboxList>
+                  <ComboboxGroup>
+                    {frameworks.map((framework) => (
+                      <ComboboxItem key={framework.value} value={framework.value}>
+                        {framework.label}
+                      </ComboboxItem>
+                    ))}
+                  </ComboboxGroup>
+                </ComboboxList>
+              </ComboboxContent>
+            </Combobox>
           </div>
 
           <AnimatePresence initial={false} mode="sync">
