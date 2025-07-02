@@ -1,4 +1,5 @@
-import { createFileRoute, isMatch, Link, Outlet, redirect, useMatches } from "@tanstack/react-router"
+import { createFileRoute, isMatch, Link, Outlet, useMatches } from "@tanstack/react-router"
+import { ReactFlowProvider } from "@xyflow/react"
 import { Home } from "lucide-react"
 import { AppSidebar } from "~/components/nav"
 import {
@@ -38,7 +39,7 @@ function RouteComponent() {
 
   const canvasView = matches.some((match) => isMatch(match, "loaderData.canvasView"))
 
-  return (
+  const Base = () => (
     <SidebarProvider>
       <AppSidebar variant="floating" />
       <SidebarInset>
@@ -81,5 +82,13 @@ function RouteComponent() {
         </section>
       </SidebarInset>
     </SidebarProvider>
+  )
+
+  return canvasView ? (
+    <ReactFlowProvider>
+      <Base />
+    </ReactFlowProvider>
+  ) : (
+    <Base />
   )
 }
